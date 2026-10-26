@@ -28,7 +28,10 @@ sync_one() {
   tmp="$(mktemp -d)"
   trap 'rm -rf "$tmp"' RETURN
 
-  git clone --quiet "$remote" "$tmp/mirror"
+  git clone --quiet -c core.autocrlf=false "$remote" "$tmp/mirror"
+  # El clon temporal no tiene identidad propia: usa la del monorepo.
+  git -C "$tmp/mirror" config user.name "$(git -C "$ROOT" config user.name)"
+  git -C "$tmp/mirror" config user.email "$(git -C "$ROOT" config user.email)"
 
   # Rango de cambios desde el último sync (si el espejo lo registra).
   local last range
