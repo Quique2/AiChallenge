@@ -24,7 +24,7 @@ npm run typecheck
 
 | Qué | Comando |
 |---|---|
-| Build nueva a TestFlight (cambios nativos o primera vez) | `npx testflight` |
+| Build nueva a TestFlight (solo si cambia algo nativo) | `eas build -p ios --profile production --auto-submit` |
 | Publicar cambios de JS/UI sin recompilar | `eas update --channel production --environment production --message "..."` |
 
 Solo se usan módulos incluidos en Expo Go, para que el plan B por QR siempre funcione.

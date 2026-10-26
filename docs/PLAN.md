@@ -170,8 +170,8 @@ Los espejos se actualizan con `scripts/sync-team-repos.sh` al cerrar cada iterac
 ### 5.3 TestFlight (cuenta Apple Developer de Quique)
 
 1. Nombre **SpaceEase**, bundle id `com.spyfamily.spaceease` (ya en `app.json`; no se puede cambiar después de la primera build). Proyecto EAS: `@quiqueexpo-2/spaceease`.
-2. Primera vez, desde `apps/mobile`: `npx testflight`. Pide el Apple ID de Quique (con 2FA), crea certificados y la app en App Store Connect, compila en la nube (no hace falta Mac) y la sube a TestFlight.
-3. Builds nativas siguientes: `eas build -p ios --profile production --auto-submit`.
+2. Hecho el 26 oct: la app existe en App Store Connect (ASC App ID `6827277889`, ya en `eas.json`) y la build 1.0.0 (1) se subió a TestFlight. EAS guarda los certificados y una API Key de App Store Connect, así que no vuelve a pedir el Apple ID.
+3. Builds nativas nuevas, desde `apps/mobile`: `eas build -p ios --profile production --auto-submit` (compila en la nube; no hace falta Mac). En Windows `npx testflight` falla con `spawn npx ENOENT`; este comando hace lo mismo.
 4. **Probadores internos** (hasta 100, sin revisión) desde el día 1.
 5. **Grupo externo con enlace público** para jueces y Specialisterne: requiere *Beta App Review* (normalmente < 24 h). Se manda al cerrar la iteración 1.
 6. Cambios de JS/UI se publican con **EAS Update** directo a la build de TestFlight, sin recompilar. Solo cambios nativos requieren build nueva.
@@ -200,7 +200,7 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 - [x] `apps/mobile`: proyecto Expo SDK 58, bundle id, ícono, `eas.json` (preview / production), EAS Update
 - [x] `apps/api`: Axum con `/health`, migraciones sqlx, Dockerfile con cargo-chef
 - [x] Railway: proyecto + Postgres + servicio `api` conectado a GitHub
-- [ ] Quique: `npx testflight` desde `apps/mobile` (crea la app en App Store Connect y sube la primera build)
+- [x] Primera build iOS (1.0.0 build 1) en TestFlight; app creada en App Store Connect
 - [ ] Invitar probadores internos en TestFlight
 - [ ] Primer sync a los espejos
 
