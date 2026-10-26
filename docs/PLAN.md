@@ -1,4 +1,4 @@
-# Plan del proyecto — Sensa
+# Plan del proyecto — SpaceEase
 
 > **Equipo:** Spy Family · **Reto:** North American AI Challenge (Arizona State University) · **Socioformador:** Specialisterne
 > Última actualización: 26 oct 2026. Este documento es la fuente de verdad: si cambia una decisión, se cambia aquí.
@@ -12,7 +12,7 @@ Specialisterne promueve la empleabilidad de personas neurodivergentes. Busca una
 
 ## 2. La propuesta
 
-**Sensa** (nombre de trabajo) ayuda a descubrir qué del entorno está dificultando una tarea concreta, propone **un solo ajuste viable** y comprueba si funcionó. Con cada prueba aprende qué le sirve **a esa persona**, para **esa tarea** y en **ese espacio**, en lugar de dar recomendaciones universales.
+**SpaceEase** (elegido por el equipo) ayuda a descubrir qué del entorno está dificultando una tarea concreta, propone **un solo ajuste viable** y comprueba si funcionó. Con cada prueba aprende qué le sirve **a esa persona**, para **esa tarea** y en **ese espacio**, en lugar de dar recomendaciones universales.
 
 ### Ciclo central (< 2 min hasta el primer ajuste)
 
@@ -161,15 +161,17 @@ Los espejos se actualizan con `scripts/sync-team-repos.sh` al cerrar cada iterac
 
 ### 5.2 Railway
 
-- Un proyecto con el servicio `api` (root `apps/api`, se redespliega solo si cambia `apps/api/**`) y un Postgres.
-- Variables: `DATABASE_URL`, `JWT_SECRET`, `ANTHROPIC_API_KEY`, `AI_PROVIDER`, `GEMINI_API_KEY` (opcional).
+- Proyecto **spaceease**: servicio `api` (Rust, se despliega solo al hacer push a `main`) + Postgres 18 (solo accesible por la red privada de Railway).
+- URL pública de la API: `https://api-production-a0b6.up.railway.app` (`/health` para revisar que está viva).
+- La configuración del servicio (root `apps/api`, healthcheck, reinicios, redespliegue solo si cambia `apps/api/**`) se aplica con `scripts/railway-configure.sh`. Railway ya no acepta `railway.toml`.
+- Variables: `DATABASE_URL` (referencia a Postgres) y `PORT=8080` hoy; después `JWT_SECRET`, `ANTHROPIC_API_KEY`, `AI_PROVIDER`, `GEMINI_API_KEY` (opcional).
 - Las llaves viven solo en Railway; nunca en git.
 
 ### 5.3 TestFlight (cuenta Apple Developer de Quique)
 
-1. Crear la app en App Store Connect. **Decidir antes el nombre público y el bundle id**: el nombre debe ser único en la App Store y el bundle id no se puede cambiar después.
-2. Crear una App Store Connect API Key y registrarla en EAS (`eas credentials`) para que las builds no pidan login cada vez.
-3. `eas build -p ios --profile production` (compila en la nube; no hace falta Mac) → `eas submit -p ios` → TestFlight.
+1. Nombre **SpaceEase**, bundle id `com.spyfamily.spaceease` (ya en `app.json`; no se puede cambiar después de la primera build). Proyecto EAS: `@quiqueexpo-2/spaceease`.
+2. Primera vez, desde `apps/mobile`: `npx testflight`. Pide el Apple ID de Quique (con 2FA), crea certificados y la app en App Store Connect, compila en la nube (no hace falta Mac) y la sube a TestFlight.
+3. Builds nativas siguientes: `eas build -p ios --profile production --auto-submit`.
 4. **Probadores internos** (hasta 100, sin revisión) desde el día 1.
 5. **Grupo externo con enlace público** para jueces y Specialisterne: requiere *Beta App Review* (normalmente < 24 h). Se manda al cerrar la iteración 1.
 6. Cambios de JS/UI se publican con **EAS Update** directo a la build de TestFlight, sin recompilar. Solo cambios nativos requieren build nueva.
@@ -192,14 +194,14 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 
 ### Checklist de la iteración 0
 
-- [ ] Quique: `eas login` y `railway login` en su terminal (piden navegador)
-- [ ] Instalar Rust con `rustup` (Visual Studio Build Tools 2022 ya está)
-- [ ] Mover el monorepo fuera de OneDrive (ver Decisiones pendientes)
-- [ ] `apps/mobile`: proyecto Expo, bundle id, `eas.json` (development / preview / production), canal de EAS Update
-- [ ] `apps/api`: Axum con `/health`, migraciones sqlx, Dockerfile, `railway.toml`
-- [ ] Railway: proyecto + Postgres + servicio `api` conectado a GitHub
-- [ ] App Store Connect: crear la app y la API Key para EAS
-- [ ] Primera build iOS → TestFlight interno
+- [x] Quique: `eas login` y `railway login`
+- [x] Instalar Rust con `rustup`
+- [x] Mover el monorepo fuera de OneDrive → `C:\dev\AIChallenge`
+- [x] `apps/mobile`: proyecto Expo SDK 58, bundle id, ícono, `eas.json` (preview / production), EAS Update
+- [x] `apps/api`: Axum con `/health`, migraciones sqlx, Dockerfile con cargo-chef
+- [x] Railway: proyecto + Postgres + servicio `api` conectado a GitHub
+- [ ] Quique: `npx testflight` desde `apps/mobile` (crea la app en App Store Connect y sube la primera build)
+- [ ] Invitar probadores internos en TestFlight
 - [ ] Primer sync a los espejos
 
 ## 7. Demo de 2 minutos
@@ -226,6 +228,4 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 
 ## 9. Decisiones pendientes
 
-- **Nombre público de la app y bundle id**, antes de la primera build.
-- **Mover el monorepo fuera de OneDrive** (por ejemplo a `C:\dev\AIChallenge`): `node_modules` y `target/` son decenas de miles de archivos y OneDrive bloquea archivos mientras sincroniza.
 - **Contacto en Specialisterne** para las pruebas con usuarios de la iteración 5.

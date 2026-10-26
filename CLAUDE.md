@@ -1,6 +1,6 @@
 # Contexto para agentes
 
-- Monorepo de **Sensa** (equipo Spy Family, socioformador Specialisterne, North American AI Challenge de ASU). Plan y decisiones en `docs/PLAN.md`; actualizarlo cuando cambie una decisión.
+- Monorepo de **SpaceEase** (equipo Spy Family, socioformador Specialisterne, North American AI Challenge de ASU). Plan y decisiones en `docs/PLAN.md`; actualizarlo cuando cambie una decisión.
 - `apps/mobile`: Expo + TypeScript. Solo módulos compatibles con Expo Go (plan B por QR). Textos en es/en.
 - `apps/api`: Rust (Axum, sqlx, ort). Despliega en Railway desde este repo.
 - `ml/`: Python, entrenamiento del modelo de audio; el contrato con la API está en `ml/README.md`.

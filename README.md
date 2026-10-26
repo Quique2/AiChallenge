@@ -1,4 +1,4 @@
-# Sensa — Spy Family × Specialisterne
+# SpaceEase — Spy Family × Specialisterne
 
 App que ayuda a personas neurodivergentes a descubrir qué del entorno les dificulta una tarea, probar **un solo ajuste viable** y guardar lo que les funciona para cada tarea y espacio. North American AI Challenge (Arizona State University).
 
