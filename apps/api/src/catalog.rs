@@ -60,6 +60,19 @@ pub enum AdjustmentKind {
     /// Hay que pedirlo a la empresa.
     #[serde(rename = "ask")]
     Ask,
+    /// "Esta vez no cambies nada": la comparación que separa un ajuste del paso del tiempo.
+    #[serde(rename = "baseline")]
+    Baseline,
+}
+
+/// Id del registro de comparación sin ajuste.
+pub const BASELINE_ID: &str = "no_change";
+
+#[derive(Deserialize)]
+pub struct Baseline {
+    pub title: Text,
+    pub steps: Text,
+    pub why: Text,
 }
 
 #[derive(Deserialize)]
@@ -90,6 +103,7 @@ pub struct Catalog {
     pub domains: Vec<Domain>,
     pub stimuli: Vec<Stimulus>,
     pub adjustments: Vec<Adjustment>,
+    pub baseline: Baseline,
 }
 
 pub static CATALOG: LazyLock<Catalog> = LazyLock::new(|| {
@@ -111,6 +125,20 @@ impl Catalog {
 
     pub fn adjustment(&self, id: &str) -> Option<&Adjustment> {
         self.adjustments.iter().find(|a| a.id == id)
+    }
+
+    /// Lo que se le muestra a la persona para un id guardado, incluida la comparación sin ajuste.
+    pub fn adjustment_view(&self, id: &str, locale: Locale) -> Option<LocalizedAdjustment<'_>> {
+        if id == BASELINE_ID {
+            return Some(LocalizedAdjustment {
+                id: BASELINE_ID,
+                kind: AdjustmentKind::Baseline,
+                title: self.baseline.title.get(locale),
+                steps: self.baseline.steps.get(locale),
+                why: self.baseline.why.get(locale),
+            });
+        }
+        self.adjustment(id).map(|a| a.localized(locale))
     }
 
     pub fn localized(&self, locale: Locale) -> LocalizedCatalog<'_> {
@@ -207,7 +235,12 @@ pub fn problems(catalog: &Catalog) -> Vec<String> {
     texts.extend(catalog.stimuli.iter().map(|s| (s.id.as_str(), &s.label)));
     for a in &catalog.adjustments {
         texts.extend([(a.id.as_str(), &a.title), (a.id.as_str(), &a.steps), (a.id.as_str(), &a.why)]);
+        if a.id == BASELINE_ID || a.kind == AdjustmentKind::Baseline {
+            problems.push(format!("{}: la comparación sin ajuste va en \"baseline\", no en la lista", a.id));
+        }
     }
+    let b = &catalog.baseline;
+    texts.extend([(BASELINE_ID, &b.title), (BASELINE_ID, &b.steps), (BASELINE_ID, &b.why)]);
     for (id, text) in texts {
         if text.es.trim().is_empty() || text.en.trim().is_empty() {
             problems.push(format!("texto vacío en {id}"));

@@ -5,6 +5,7 @@ mod spaces;
 
 use axum::{
     Router,
+    response::Html,
     routing::{delete, get, post},
 };
 use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLayer};
@@ -34,9 +35,15 @@ pub fn router(state: AppState) -> Router {
 
     Router::new()
         .route("/health", get(health::health))
+        .route("/privacy", get(privacy))
         .nest("/v1", v1)
         .layer(RequestBodyLimitLayer::new(MAX_BODY_BYTES))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state)
+}
+
+/// Aviso de privacidad (versión `account::CONSENT_VERSION`). Lo enlaza la app y App Store Connect.
+async fn privacy() -> Html<&'static str> {
+    Html(include_str!("../../static/privacy.html"))
 }

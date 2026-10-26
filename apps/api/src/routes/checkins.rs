@@ -6,13 +6,14 @@ use axum::{
 };
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
+use rand::RngExt;
 use uuid::Uuid;
 
 use crate::{
     AppState,
     auth::AuthUser,
-    catalog::{AdjustmentKind, CATALOG, Locale, LocalizedAdjustment, LocalizedCatalog},
-    engine::{self, Arm, ArmEvidence, Evidence, Reason},
+    catalog::{AdjustmentKind, BASELINE_ID, CATALOG, Locale, LocalizedAdjustment, LocalizedCatalog},
+    engine::{self, Arm, ArmEvidence, EXPLORATION, Evidence, Reason},
     error::{AppError, AppResult},
 };
 
@@ -33,12 +34,16 @@ pub struct CheckinRow {
     task: String,
     feeling: String,
     effort_before: i16,
+    discomfort_before: Option<i16>,
     focus_stimulus: Option<String>,
     adjustment_id: Option<String>,
     declined: Vec<String>,
     status: String,
     remind_at: Option<DateTime<Utc>>,
     effort_after: Option<i16>,
+    discomfort_after: Option<i16>,
+    improvement: Option<f32>,
+    typical_improvement: Option<f32>,
     attribution: Option<String>,
     outcome: Option<String>,
     created_at: DateTime<Utc>,
@@ -49,8 +54,9 @@ macro_rules! select_checkin {
     ($tail:literal) => {
         concat!(
             "SELECT c.id, c.space_id, s.name AS space_name, c.task, c.feeling, c.effort_before,
-                    c.focus_stimulus, c.adjustment_id, c.declined, c.status, c.remind_at,
-                    c.effort_after, c.attribution, c.outcome, c.created_at
+                    c.discomfort_before, c.focus_stimulus, c.adjustment_id, c.declined, c.status,
+                    c.remind_at, c.effort_after, c.discomfort_after, c.improvement,
+                    c.typical_improvement, c.attribution, c.outcome, c.created_at
              FROM checkins c LEFT JOIN spaces s ON s.id = c.space_id ",
             $tail
         )
@@ -64,10 +70,14 @@ pub struct CheckinView {
     task: String,
     feeling: String,
     effort_before: i16,
+    discomfort_before: Option<i16>,
     focus_stimulus: Option<String>,
     status: String,
     remind_at: Option<DateTime<Utc>>,
     effort_after: Option<i16>,
+    discomfort_after: Option<i16>,
+    improvement: Option<f32>,
+    typical_improvement: Option<f32>,
     attribution: Option<String>,
     outcome: Option<String>,
     created_at: DateTime<Utc>,
@@ -87,18 +97,18 @@ fn view(row: CheckinRow, locale: Locale) -> CheckinView {
         task: row.task,
         feeling: row.feeling,
         effort_before: row.effort_before,
+        discomfort_before: row.discomfort_before,
         focus_stimulus: row.focus_stimulus,
         status: row.status,
         remind_at: row.remind_at,
         effort_after: row.effort_after,
+        discomfort_after: row.discomfort_after,
+        improvement: row.improvement,
+        typical_improvement: row.typical_improvement,
         attribution: row.attribution,
         outcome: row.outcome,
         created_at: row.created_at,
-        adjustment: row
-            .adjustment_id
-            .as_deref()
-            .and_then(|id| CATALOG.adjustment(id))
-            .map(|a| a.localized(locale)),
+        adjustment: row.adjustment_id.as_deref().and_then(|id| CATALOG.adjustment_view(id, locale)),
     }
 }
 
@@ -114,8 +124,11 @@ pub struct Proposal {
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum ReasonView {
     FirstTry,
+    Exploring,
     TriedHere { helped: u32, trials: u32 },
     TriedElsewhere { helped: u32, trials: u32 },
+    /// Registro de comparación sin ajuste.
+    Comparison,
 }
 
 #[derive(Serialize)]
@@ -136,6 +149,7 @@ pub struct NewCheckin {
     task: String,
     feeling: String,
     effort_before: i16,
+    discomfort_before: i16,
     #[serde(default)]
     observations: Vec<NewObservation>,
     focus_stimulus: Option<String>,
@@ -152,7 +166,8 @@ pub async fn create_checkin(
     if CATALOG.feeling(&body.feeling).is_none() {
         return Err(AppError::BadRequest(format!("sensación desconocida: {}", body.feeling)));
     }
-    check_effort(body.effort_before)?;
+    check_scale(body.effort_before)?;
+    check_scale(body.discomfort_before)?;
     for obs in &body.observations {
         if CATALOG.stimulus(&obs.stimulus).is_none() {
             return Err(AppError::BadRequest(format!("estímulo desconocido: {}", obs.stimulus)));
@@ -194,14 +209,16 @@ pub async fn create_checkin(
 
     let mut tx = state.db.begin().await?;
     let id: Uuid = sqlx::query_scalar(
-        "INSERT INTO checkins (user_id, space_id, task, feeling, effort_before, focus_stimulus)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+        "INSERT INTO checkins
+            (user_id, space_id, task, feeling, effort_before, discomfort_before, focus_stimulus)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
     )
     .bind(user.id)
     .bind(body.space_id)
     .bind(&body.task)
     .bind(&body.feeling)
     .bind(body.effort_before)
+    .bind(body.discomfort_before)
     .bind(&focus)
     .fetch_one(&mut *tx)
     .await?;
@@ -303,6 +320,7 @@ pub async fn accept(
 #[derive(Deserialize)]
 pub struct NewOutcome {
     effort_after: i16,
+    discomfort_after: i16,
     attribution: String,
 }
 
@@ -325,7 +343,8 @@ pub async fn record_outcome(
     Path(id): Path<Uuid>,
     Json(body): Json<NewOutcome>,
 ) -> AppResult<Json<OutcomeView>> {
-    check_effort(body.effort_after)?;
+    check_scale(body.effort_after)?;
+    check_scale(body.discomfort_after)?;
     if !matches!(body.attribution.as_str(), "yes" | "no" | "unsure") {
         return Err(AppError::BadRequest("attribution debe ser yes, no o unsure".into()));
     }
@@ -333,15 +352,26 @@ pub async fn record_outcome(
     if row.status != "trying" {
         return Err(AppError::BadRequest("este registro no tiene un ajuste en prueba".into()));
     }
-    let outcome = outcome_of(row.effort_before, body.effort_after, &body.attribution);
+    // Registros anteriores a la medida de molestia: el esfuerzo hace de respaldo.
+    let before = row.discomfort_before.unwrap_or(row.effort_before);
+    let improvement = f64::from(before - body.discomfort_after);
+    let typical = typical_improvement(&state, user.id).await?;
+    // La comparación sin ajuste alimenta la línea base, no al motor.
+    let is_baseline = row.adjustment_id.as_deref() == Some(BASELINE_ID);
+    let outcome = (!is_baseline).then(|| outcome_of(improvement, typical, &body.attribution));
     sqlx::query(
         "UPDATE checkins SET status = 'done', completed_at = now(), effort_after = $2,
-                attribution = $3, outcome = $4 WHERE id = $1",
+                discomfort_after = $3, attribution = $4, outcome = $5, improvement = $6,
+                typical_improvement = $7
+         WHERE id = $1",
     )
     .bind(id)
     .bind(body.effort_after)
+    .bind(body.discomfort_after)
     .bind(&body.attribution)
     .bind(outcome)
+    .bind(improvement as f32)
+    .bind(typical as f32)
     .execute(&state.db)
     .await?;
 
@@ -449,7 +479,7 @@ pub async fn playbook(State(state): State<AppState>, user: AuthUser) -> AppResul
                 count(*) FILTER (WHERE c.outcome IN ('helped', 'not_helped')) AS trials,
                 max(c.completed_at) AS last_tried
          FROM checkins c LEFT JOIN spaces s ON s.id = c.space_id
-         WHERE c.user_id = $1 AND c.status = 'done'
+         WHERE c.user_id = $1 AND c.status = 'done' AND c.adjustment_id <> 'no_change'
            AND c.adjustment_id IS NOT NULL AND c.focus_stimulus IS NOT NULL
          GROUP BY c.task, c.space_id, s.name, c.focus_stimulus, c.adjustment_id
          HAVING count(*) FILTER (WHERE c.outcome = 'helped') > 0
@@ -507,6 +537,15 @@ async fn propose(
     let Some(stimulus) = row.focus_stimulus.as_deref() else {
         return Ok(None);
     };
+    if wants_comparison(state, user_id, row).await? {
+        sqlx::query("UPDATE checkins SET adjustment_id = $2 WHERE id = $1")
+            .bind(row.id)
+            .bind(BASELINE_ID)
+            .execute(&state.db)
+            .await?;
+        let adjustment = CATALOG.adjustment_view(BASELINE_ID, locale).expect("baseline");
+        return Ok(Some(Proposal { adjustment, reason: ReasonView::Comparison, alternatives: 1 }));
+    }
     let blocked: Vec<String> = match row.space_id {
         Some(space_id) => sqlx::query_scalar("SELECT adjustment_id FROM space_blocks WHERE space_id = $1")
             .bind(space_id)
@@ -567,7 +606,7 @@ async fn propose(
         .iter()
         .map(|a| Arm { id: &a.id, prior: a.prior, evidence: evidence.get(&a.id).copied().unwrap_or_default() })
         .collect();
-    let chosen = engine::choose(&arms, &mut rand::rng()).expect("hay candidatos");
+    let chosen = engine::choose(&arms, EXPLORATION, &mut rand::rng()).expect("hay candidatos");
     let adjustment = CATALOG.adjustment(chosen.id).expect("el candidato viene del catálogo");
 
     sqlx::query("UPDATE checkins SET adjustment_id = $2 WHERE id = $1")
@@ -576,8 +615,9 @@ async fn propose(
         .execute(&state.db)
         .await?;
 
-    let reason = match engine::reason(chosen) {
+    let reason = match engine::reason(chosen, &arms) {
         Reason::FirstTry => ReasonView::FirstTry,
+        Reason::Exploring => ReasonView::Exploring,
         Reason::TriedHere(e) => ReasonView::TriedHere { helped: e.helped, trials: e.trials() },
         Reason::TriedElsewhere(e) => ReasonView::TriedElsewhere { helped: e.helped, trials: e.trials() },
     };
@@ -588,23 +628,76 @@ async fn propose(
     }))
 }
 
-/// Qué aprende el motor de un resultado. La opinión de la persona manda; si no sabe,
-/// decide el cambio de esfuerzo, y sin cambio no se cuenta como evidencia.
-pub fn outcome_of(before: i16, after: i16, attribution: &str) -> &'static str {
+/// Cada cuánto se propone la comparación sin ajuste, una vez que la persona ya tiene historia.
+const COMPARISON_RATE: f64 = 0.1;
+const COMPARISON_MIN_HISTORY: i64 = 3;
+
+/// ¿Toca proponer "esta vez no cambies nada"? Nunca dos veces seguidas ni si ya la descartó aquí.
+async fn wants_comparison(state: &AppState, user_id: Uuid, row: &CheckinRow) -> AppResult<bool> {
+    if row.declined.iter().any(|d| d == BASELINE_ID) || !rand::rng().random_bool(COMPARISON_RATE) {
+        return Ok(false);
+    }
+    let (done, last_was_comparison): (i64, Option<bool>) = sqlx::query_as(
+        "SELECT count(*),
+                (array_agg(adjustment_id = 'no_change' ORDER BY completed_at DESC))[1]
+         FROM checkins WHERE user_id = $1 AND status = 'done'",
+    )
+    .bind(user_id)
+    .fetch_one(&state.db)
+    .await?;
+    Ok(done >= COMPARISON_MIN_HISTORY && last_was_comparison != Some(true))
+}
+
+/// Mejora típica de la persona (molestia antes − después) en sus últimos 20 registros.
+/// Si hay al menos dos comparaciones sin ajuste, se usan solo esas. Con pocos datos se acerca a
+/// un prior de 0.5: quien registra suele hacerlo en un mal momento, y algo mejora solo.
+async fn typical_improvement(state: &AppState, user_id: Uuid) -> AppResult<f64> {
+    let (baseline_n, baseline_avg, all_n, all_avg): (i64, Option<f64>, i64, Option<f64>) =
+        sqlx::query_as(
+            "SELECT count(*) FILTER (WHERE adjustment_id = 'no_change'),
+                    (avg(improvement) FILTER (WHERE adjustment_id = 'no_change'))::float8,
+                    count(*), avg(improvement)::float8
+             FROM (SELECT adjustment_id, improvement FROM checkins
+                   WHERE user_id = $1 AND status = 'done' AND improvement IS NOT NULL
+                   ORDER BY completed_at DESC LIMIT 20) recent",
+        )
+        .bind(user_id)
+        .fetch_one(&state.db)
+        .await?;
+    Ok(if baseline_n >= 2 {
+        shrink(baseline_avg.unwrap_or(0.0), baseline_n)
+    } else {
+        shrink(all_avg.unwrap_or(0.0), all_n)
+    })
+}
+
+const TYPICAL_PRIOR: f64 = 0.5;
+const TYPICAL_PRIOR_WEIGHT: f64 = 2.0;
+
+fn shrink(average: f64, n: i64) -> f64 {
+    let n = n as f64;
+    (TYPICAL_PRIOR * TYPICAL_PRIOR_WEIGHT + average * n) / (TYPICAL_PRIOR_WEIGHT + n)
+}
+
+/// Qué aprende el motor. Se compara la mejora contra la típica de la persona, no contra cero,
+/// para no premiar el simple paso del tiempo. Si la persona dice que no ayudó, no ayudó.
+pub fn outcome_of(improvement: f64, typical: f64, attribution: &str) -> &'static str {
+    let margin = improvement - typical;
     match attribution {
-        "yes" => "helped",
         "no" => "not_helped",
-        _ if after < before => "helped",
-        _ if after > before => "not_helped",
+        "yes" if margin >= 0.0 => "helped",
+        "yes" => "unclear",
+        _ if margin >= 1.0 => "helped",
+        _ if margin <= -1.0 => "not_helped",
         _ => "unclear",
     }
 }
 
-fn check_effort(effort: i16) -> AppResult<()> {
-    if (1..=5).contains(&effort) {
+fn check_scale(value: i16) -> AppResult<()> {
+    if (1..=5).contains(&value) {
         Ok(())
     } else {
-        Err(AppError::BadRequest("el esfuerzo va de 1 a 5".into()))
+        Err(AppError::BadRequest("las escalas van de 1 a 5".into()))
     }
 }
 
@@ -614,18 +707,27 @@ fn count(n: i64) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::outcome_of;
+    use super::{outcome_of, shrink};
 
     #[test]
-    fn the_persons_judgement_comes_first() {
-        assert_eq!(outcome_of(4, 4, "yes"), "helped");
-        assert_eq!(outcome_of(4, 2, "no"), "not_helped");
+    fn a_no_is_always_a_no() {
+        assert_eq!(outcome_of(3.0, 0.5, "no"), "not_helped");
     }
 
     #[test]
-    fn when_unsure_the_effort_change_decides() {
-        assert_eq!(outcome_of(4, 3, "unsure"), "helped");
-        assert_eq!(outcome_of(2, 3, "unsure"), "not_helped");
-        assert_eq!(outcome_of(3, 3, "unsure"), "unclear");
+    fn helping_means_better_than_usual_not_just_better() {
+        // Mejoró 1, pero lo típico para esta persona es mejorar 1.5: no cuenta como evidencia.
+        assert_eq!(outcome_of(1.0, 1.5, "yes"), "unclear");
+        assert_eq!(outcome_of(2.0, 1.5, "yes"), "helped");
+        assert_eq!(outcome_of(3.0, 1.0, "unsure"), "helped");
+        assert_eq!(outcome_of(0.0, 1.5, "unsure"), "not_helped");
+        assert_eq!(outcome_of(1.0, 0.5, "unsure"), "unclear");
+    }
+
+    #[test]
+    fn typical_improvement_starts_near_the_prior() {
+        assert!((shrink(0.0, 0) - 0.5).abs() < 1e-9);
+        assert!((shrink(2.0, 2) - 1.25).abs() < 1e-9);
+        assert!((shrink(1.0, 100) - 1.0).abs() < 0.02);
     }
 }

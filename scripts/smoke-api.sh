@@ -27,9 +27,11 @@ check() {
 json() { python -c "import sys, json; print(json.load(sys.stdin)$1)" <<<"$BODY"; }
 
 check "health" 200 "$BASE/health"
+check "aviso de privacidad" 200 "$BASE/privacy"
 check "sin llave → 401" 401 "$BASE/v1/me"
 check "llave corta → 400" 400 -X POST "$BASE/v1/auth/device" -H "Content-Type: application/json" -d '{"device_key":"corta"}'
-check "crear cuenta" 201 -X POST "$BASE/v1/auth/device" -H "Content-Type: application/json" -d "{\"device_key\":\"$KEY\"}"
+check "sin consentimiento → 400" 400 -X POST "$BASE/v1/auth/device" -H "Content-Type: application/json" -d "{\"device_key\":\"$KEY\"}"
+check "crear cuenta" 201 -X POST "$BASE/v1/auth/device" -H "Content-Type: application/json" -d "{\"device_key\":\"$KEY\",\"consent_version\":1}"
 check "misma llave no duplica" 200 -X POST "$BASE/v1/auth/device" -H "Content-Type: application/json" -d "{\"device_key\":\"$KEY\"}"
 check "me" 200 "${AUTH[@]}" "$BASE/v1/me"
 check "cambiar idioma" 200 -X PATCH "${AUTH[@]}" "$BASE/v1/me" -d '{"locale":"en"}'
@@ -46,7 +48,7 @@ check "catálogo" 200 "$BASE/v1/catalog?locale=es"
 expect "['domains'].__len__()" 4 "dominios del catálogo"
 
 CHECKIN=$(cat <<JSON
-{"space_id":"$SPACE_ID","task":"reading","feeling":"focus","effort_before":4,
+{"space_id":"$SPACE_ID","task":"reading","feeling":"focus","effort_before":4,"discomfort_before":4,
  "observations":[{"stimulus":"voices","response":"yes"},{"stimulus":"glare","response":"yes"},
                  {"stimulus":"light_dim","response":"no"}],
  "focus_stimulus":"voices"}
@@ -69,23 +71,23 @@ check "aceptar con recordatorio" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins/$CH
 expect "['status']" trying "estado tras aceptar"
 check "en curso" 200 "${AUTH[@]}" "$BASE/v1/checkins?status=trying"
 expect ".__len__()" 1 "registros en curso"
-check "resultado" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins/$CHECKIN_ID/outcome" -d '{"effort_after":2,"attribution":"yes"}'
+check "resultado" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins/$CHECKIN_ID/outcome" -d '{"effort_after":2,"discomfort_after":1,"attribution":"yes"}'
 expect "['checkin']['outcome']" helped "resultado"
 expect "['here']['trials']" 1 "pruebas en este contexto"
-check "resultado repetido → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/checkins/$CHECKIN_ID/outcome" -d '{"effort_after":2,"attribution":"yes"}'
+check "resultado repetido → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/checkins/$CHECKIN_ID/outcome" -d '{"effort_after":2,"discomfort_after":1,"attribution":"yes"}'
 
 check "mis ajustes" 200 "${AUTH[@]}" "$BASE/v1/playbook"
 expect ".__len__()" 1 "entradas en mis ajustes"
 expect "[0]['adjustment']['id']" "$ADJUSTMENT" "ajuste guardado"
 
 check "varios sin foco → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/checkins" \
-  -d '{"task":"writing","feeling":"drained","effort_before":3,"observations":[{"stimulus":"voices","response":"yes"},{"stimulus":"too_cold","response":"yes"}]}'
+  -d '{"task":"writing","feeling":"drained","effort_before":3,"discomfort_before":3,"observations":[{"stimulus":"voices","response":"yes"},{"stimulus":"too_cold","response":"yes"}]}'
 check "sin estímulo claro" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins" \
-  -d '{"task":"writing","feeling":"other","effort_before":3,"observations":[{"stimulus":"voices","response":"unsure"}]}'
+  -d '{"task":"writing","feeling":"other","effort_before":3,"discomfort_before":2,"observations":[{"stimulus":"voices","response":"unsure"}]}'
 expect "['proposal']" None "sin estímulo no hay propuesta"
 check "dejarlo" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins/$(json "['checkin']['id']")/abandon"
 check "esfuerzo fuera de rango → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/checkins" \
-  -d '{"task":"writing","feeling":"other","effort_before":9}'
+  -d '{"task":"writing","feeling":"other","effort_before":9,"discomfort_before":3}'
 
 check "borrar espacio" 204 -X DELETE "${AUTH[@]}" "$BASE/v1/spaces/$SPACE_ID"
 check "borrar cuenta" 204 -X DELETE "${AUTH[@]}" "$BASE/v1/me"

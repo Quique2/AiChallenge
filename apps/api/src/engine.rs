@@ -9,7 +9,7 @@
 //! Se toma una muestra de cada Beta y gana la mayor: propone lo que ya funcionó, sin dejar de
 //! explorar ajustes que todavía no conoce.
 
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand_distr::{Beta, Distribution};
 
 /// Pruebas anteriores de un ajuste: cuántas veces bajó el esfuerzo y cuántas no.
@@ -82,12 +82,27 @@ pub fn is_exhausted(arm: &Arm) -> bool {
     arm.evidence.exact.helped == 0 && arm.evidence.exact.not_helped >= 2
 }
 
-/// Elige un ajuste muestreando su Beta. Descarta los agotados mientras haya alternativas.
-/// `None` solo si no hay candidatos.
-pub fn choose<'a, R: Rng + ?Sized>(arms: &'a [Arm<'a>], rng: &mut R) -> Option<&'a Arm<'a>> {
+/// Probabilidad mínima de explorar al azar (HeartSteps acota igual): aunque un ajuste parezca
+/// el mejor, de vez en cuando se prueba otro para no quedarse con una primera impresión.
+pub const EXPLORATION: f64 = 0.1;
+
+/// Elige un ajuste: casi siempre muestreando su Beta y, con probabilidad `explore`, al azar.
+/// Descarta los agotados mientras haya alternativas. `None` solo si no hay candidatos.
+pub fn choose<'a, R: Rng + ?Sized>(
+    arms: &'a [Arm<'a>],
+    explore: f64,
+    rng: &mut R,
+) -> Option<&'a Arm<'a>> {
     let all_exhausted = arms.iter().all(is_exhausted);
-    arms.iter()
-        .filter(|arm| all_exhausted || !is_exhausted(arm))
+    let eligible: Vec<&Arm> = arms.iter().filter(|arm| all_exhausted || !is_exhausted(arm)).collect();
+    if eligible.is_empty() {
+        return None;
+    }
+    if rng.random_bool(explore.clamp(0.0, 1.0)) {
+        return Some(eligible[rng.random_range(0..eligible.len())]);
+    }
+    eligible
+        .into_iter()
         .map(|arm| {
             let (alpha, beta) = posterior(arm);
             let draw = Beta::new(alpha, beta).map_or(arm.prior, |dist| dist.sample(rng));
@@ -106,13 +121,17 @@ pub enum Reason {
     TriedElsewhere(Evidence),
     /// Nunca lo ha probado con este estímulo: es un primer intento.
     FirstTry,
+    /// Nunca lo ha probado, aunque otro ajuste ya le ayudó: se prueba algo nuevo para aprender.
+    Exploring,
 }
 
-pub fn reason(arm: &Arm) -> Reason {
+pub fn reason(arm: &Arm, all: &[Arm]) -> Reason {
     if arm.evidence.exact.trials() > 0 {
         Reason::TriedHere(arm.evidence.exact)
     } else if arm.evidence.person.trials() > 0 {
         Reason::TriedElsewhere(arm.evidence.person)
+    } else if all.iter().any(|other| other.evidence.person.helped > 0) {
+        Reason::Exploring
     } else {
         Reason::FirstTry
     }
@@ -135,13 +154,13 @@ mod tests {
 
     fn wins(arms: &[Arm], id: &str, draws: usize) -> usize {
         let mut rng = StdRng::seed_from_u64(7);
-        (0..draws).filter(|_| choose(arms, &mut rng).unwrap().id == id).count()
+        (0..draws).filter(|_| choose(arms, 0.0, &mut rng).unwrap().id == id).count()
     }
 
     #[test]
     fn no_candidates_means_no_choice() {
         let mut rng = StdRng::seed_from_u64(1);
-        assert!(choose(&[], &mut rng).is_none());
+        assert!(choose(&[], EXPLORATION, &mut rng).is_none());
     }
 
     #[test]
@@ -207,14 +226,24 @@ mod tests {
 
     #[test]
     fn reasons_follow_the_most_specific_evidence() {
-        assert_eq!(
-            reason(&arm("x", 0.5, (2, 1), (5, 1), (0, 0))),
-            Reason::TriedHere(Evidence { helped: 2, not_helped: 1 })
-        );
-        assert_eq!(
-            reason(&arm("x", 0.5, (0, 0), (1, 1), (0, 0))),
-            Reason::TriedElsewhere(Evidence { helped: 1, not_helped: 1 })
-        );
-        assert_eq!(reason(&arm("x", 0.5, (0, 0), (0, 0), (9, 1))), Reason::FirstTry);
+        let here = arm("x", 0.5, (2, 1), (5, 1), (0, 0));
+        assert_eq!(reason(&here, &[]), Reason::TriedHere(Evidence { helped: 2, not_helped: 1 }));
+        let elsewhere = arm("x", 0.5, (0, 0), (1, 1), (0, 0));
+        assert_eq!(reason(&elsewhere, &[]), Reason::TriedElsewhere(Evidence { helped: 1, not_helped: 1 }));
+        let new = arm("x", 0.5, (0, 0), (0, 0), (9, 1));
+        assert_eq!(reason(&new, &[]), Reason::FirstTry);
+        let known_good = arm("y", 0.5, (2, 0), (2, 0), (0, 0));
+        assert_eq!(reason(&new, &[known_good]), Reason::Exploring);
+    }
+
+    #[test]
+    fn exploration_floor_reaches_every_option() {
+        let arms = [
+            arm("favorito", 0.5, (9, 0), (9, 0), (0, 0)),
+            arm("otro", 0.5, (0, 0), (0, 0), (0, 0)),
+        ];
+        let mut rng = StdRng::seed_from_u64(3);
+        let explored = (0..2000).filter(|_| choose(&arms, 1.0, &mut rng).unwrap().id == "otro").count();
+        assert!((800..1200).contains(&explored), "con exploración total, mitad y mitad: {explored}");
     }
 }
