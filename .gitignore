@@ -1,0 +1,38 @@
+# Dependencias y builds
+node_modules/
+target/
+dist/
+build/
+.expo/
+web-build/
+*.tsbuildinfo
+
+# Proyectos nativos generados por expo prebuild
+apps/mobile/ios/
+apps/mobile/android/
+
+# Python (ml/)
+__pycache__/
+*.py[cod]
+.venv/
+.ipynb_checkpoints/
+ml/data/
+ml/runs/
+*.pt
+*.ckpt
+
+# Secretos
+.env
+.env.*
+!.env.example
+*.p8
+*.p12
+*.mobileprovision
+*.jks
+*.keystore
+
+# Sistema y editores
+.DS_Store
+Thumbs.db
+.idea/
+*.log
