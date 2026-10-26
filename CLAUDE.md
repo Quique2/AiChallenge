@@ -7,3 +7,5 @@
 - `nina-col/AiChallengeFront` y `nina-col/AiChallengeBack` son espejos de `apps/mobile` y `apps/api`. Se actualizan solo con `scripts/sync-team-repos.sh` (commit normal, nunca force-push) y solo cuando el usuario lo pida.
 - Nada de secretos en git: llaves en Railway y EAS.
 - Producto: sin diagnósticos ni puntuaciones; los hallazgos de la IA son hipótesis que la persona confirma; "No sé" siempre disponible.
+- Diseño, lenguaje, movimiento y medición: seguir `docs/DESIGN.md`. La evidencia detrás está en `docs/research/reports/`.
+- API: `scripts/smoke-api.sh [URL]` debe pasar antes de cada push que toque `apps/api` (Postgres local en `localhost:5433`, ver `apps/api/.env.example`).

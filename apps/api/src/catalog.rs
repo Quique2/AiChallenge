@@ -133,6 +133,7 @@ impl Catalog {
             return Some(LocalizedAdjustment {
                 id: BASELINE_ID,
                 kind: AdjustmentKind::Baseline,
+                stimuli: &[],
                 title: self.baseline.title.get(locale),
                 steps: self.baseline.steps.get(locale),
                 why: self.baseline.why.get(locale),
@@ -173,6 +174,7 @@ impl Adjustment {
         LocalizedAdjustment {
             id: &self.id,
             kind: self.kind,
+            stimuli: &self.stimuli,
             title: self.title.get(locale),
             steps: self.steps.get(locale),
             why: self.why.get(locale),
@@ -197,6 +199,7 @@ pub struct LocalizedDomain<'a> {
 pub struct LocalizedAdjustment<'a> {
     pub id: &'a str,
     pub kind: AdjustmentKind,
+    pub stimuli: &'a [String],
     pub title: &'a str,
     pub steps: &'a str,
     pub why: &'a str,
