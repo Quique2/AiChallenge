@@ -69,6 +69,17 @@ La app habla del **entorno**, no de la persona. No diagnostica, no puntúa y no 
 - "Borrar todos mis datos" en Ajustes borra el servidor y el teléfono.
 - Cuando entren foto y audio (iteración 2): el audio se procesa en el teléfono; la foto no se guarda y se pide a la IA que no describa personas. Cada hallazgo de la IA es una hipótesis que la persona confirma, y solo lo confirmado cuenta.
 
-## 9. Lo que se evita (señales de una app genérica)
+## 9. Skills para quien trabaje con Claude Code
+
+`.claude/settings.json` habilita dos plugins del marketplace oficial; Claude Code ofrece instalarlos al abrir el repo:
+
+| Plugin | Para qué | Qué ignorar en esta app |
+|---|---|---|
+| `expo` (Expo) | `expo-animation`, `expo-design-system`, `expo-native-ui`, router y EAS: qué animar, en qué hilo, con qué curva; las 20 señales de una app genérica | El "presupuesto de deleite" y las celebraciones, los resortes con rebote, el "aplastado" al tocar y la vibración "para deleitar" |
+| `frontend-design` (Anthropic) | Plan de diseño → revisión contra el brief → construir → criticar; lista de señales de diseño hecho por IA | "Tomar riesgos estéticos" y la animación de entrada orquestada: la personalidad va en el pixel art, no en el movimiento |
+
+Las reglas de este documento mandan sobre las de cualquier skill.
+
+## 10. Lo que se evita (señales de una app genérica)
 
 Fondo crema con tipografía serif de exhibición y acento terracota; una tarjeta por cada fila; sombras fuertes; bordes grises en todo; entradas escalonadas en cada lista; carrusel de bienvenida promocional; degradados decorativos; emoji como íconos; spinners de pantalla completa; encabezados hechos a mano. La personalidad de SpaceEase está en un solo lugar: la escena en pixel art del ícono.
