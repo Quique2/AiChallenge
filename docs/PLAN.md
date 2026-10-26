@@ -10,46 +10,51 @@ Specialisterne promueve la empleabilidad de personas neurodivergentes. Busca una
 - **No puede ser genérica.**
 - **Tiene que ser un FMVP** (Functional Minimal Valuable Product): desplegado y usable, de preferencia en TestFlight o Expo. No basta con vender la idea.
 
+### Lo que dice la evidencia (investigación del 26 oct 2026)
+
+Informe completo, con fuentes y nivel de evidencia: [`docs/research/reports/`](research/reports/Ajustes%20sensoriales%20laborales%20y%20neurodivergencia.md). Notas por tema en `docs/research/research_notes/`.
+
+- **El problema es real.** Las diferencias sensoriales son casi universales en adultos autistas y comunes en TDAH. En oficinas, las voces ajenas y la densidad de gente encabezan la lista; luego la luz y la temperatura.
+- **Lo que mueve la aguja es el control.** En 206 personas autistas que trabajan en oficina, las barreras sensoriales se asocian con menos satisfacción, desempeño y autoeficacia. El mediador es el control percibido sobre el entorno, y eso es lo que la app devuelve.
+- **La eficacia de los ajustes no está probada.** La revisión principal no encontró ningún estudio que midiera si un ajuste sensorial funciona. SpaceEase puede generar esa evidencia persona por persona, si mide con honestidad.
+- **El hueco es pedir.** En EE. UU., el 70 % no sabe a qué ajustes tiene derecho y el 70 % teme revelar su condición. En los tres países se puede empezar una solicitud describiendo la tarea y la barrera, sin diagnóstico.
+- **El riesgo está en el micrófono, la cámara y el empleador**, no en el algoritmo.
+
+Decisiones que ya están en el producto: medida principal de molestia del entorno, resultado relativo a la mejora típica de cada persona, comparación transparente "sin cambios", exploración mínima, consentimiento expreso, solicitud en cinco partes sin diagnóstico, cero acceso del empleador, sin rachas y reglas de diseño cognitivamente accesible ([`docs/DESIGN.md`](DESIGN.md)).
+
 ## 2. La propuesta
 
 **SpaceEase** (elegido por el equipo) ayuda a descubrir qué del entorno está dificultando una tarea concreta, propone **un solo ajuste viable** y comprueba si funcionó. Con cada prueba aprende qué le sirve **a esa persona**, para **esa tarea** y en **ese espacio**, en lugar de dar recomendaciones universales.
 
-### Ciclo central (< 2 min hasta el primer ajuste)
+### Ciclo central
 
-1. **Registrar.** Qué siento (me cuesta concentrarme / termino agotado / siento incomodidad / otro), qué tarea hago (lectura, escritura, llamadas, código, reuniones…), en qué espacio, y esfuerzo percibido del 1 al 5.
-2. **Descubrir.** Grabar ~10 s de audio y tomar una foto del lugar, revisando cada captura antes de enviarla. La IA devuelve:
-   - hasta **3 marcadores sobre la foto**, formulados como pregunta: *"Parece haber un reflejo en la pantalla. ¿Te incomoda al leer?"*
-   - **observaciones del audio**: *"Se perciben voces de fondo. ¿Te distraen o puedes ignorarlas?"*
-   - 1–3 preguntas breves para lo que no se ve ni se oye (temperatura, movimiento alrededor, parpadeo de luz).
-
-   Cada pregunta se responde **Sí / No / No sé**. Descubrirlo es parte del producto. Si la persona no quiere usar foto o audio, hace solo las preguntas.
-3. **Un solo ajuste.** Lo elige nuestro motor personal (sección 3.4) entre los que la persona dijo que puede hacer. Va etiquetado:
-   - **Lo puedo hacer yo:** girar la pantalla, alejarse del pasillo, reducir estímulos visibles, probar otro lugar para esa tarea.
-   - **Lo necesito pedir:** la app redacta la solicitud de ajuste para jefe o RH **sin revelar diagnóstico**. Esto conecta directo con la misión de empleabilidad de Specialisterne.
-4. **Comprobar.** Un recordatorio local tras el bloque de trabajo ("¿Cómo te fue?") repite la valoración del 1 al 5. Si bajó el esfuerzo, el ajuste se guarda en **Mis ajustes**: qué funcionó, para qué tarea y en qué espacio.
-5. **Aprender.** Tarjetas basadas en el historial de la persona:
-   > *"En este escritorio te cuesta leer documentos cuando hay conversaciones cerca. Probaste una ubicación más alejada y reportaste menor esfuerzo. ¿Guardamos ese ajuste para tareas de lectura?"*
+1. **Registrar.** Qué tarea hace, cómo se siente con ella, dónde está (se omite si solo tiene un lugar), cuánto le molesta el entorno y cuánto esfuerzo le cuesta. Cada escala tiene 5 botones con palabras.
+2. **Descubrir.** Una pantalla por dominio (sonido, luz, lo que ves, el cuerpo), con "Nada de esto" y "No sé". Si marca varias cosas, elige la que más le afecta ahora.
+   - *Iteración 2:* foto y 10 s de audio como apoyo. La IA propone hipótesis ("Posible reflejo en la pantalla. ¿Te molesta?") y solo cuenta lo que la persona confirma.
+3. **Un solo ajuste.** Lo elige el motor personal (3.4), con su motivo. Hay botones para "Dame otra idea" y "No puedo hacerlo aquí". Si ya no quedan ideas propias, propone algo para pedir a la empresa. De vez en cuando propone **"Esta vez no cambies nada"** para comparar, y se puede rechazar.
+4. **Comprobar.** Si la persona lo pide, un aviso silencioso a los 25 o 50 minutos. Repite la molestia y el esfuerzo y pregunta "¿Crees que el ajuste ayudó?". Cuenta como ayuda si mejoró **más que su mejora típica**.
+5. **Aprender.** "Lo que me sirve" guarda lo que ayudó por tarea y lugar, con cuántas veces se probó ("ayudó 2 de 3 veces; todavía no es seguro"). Desde ahí se arma una **solicitud a la empresa** en cinco partes, sin diagnóstico, que la persona comparte si quiere.
 
 ### Principios no negociables
 
-- Nada de diagnósticos ni "puntuación de neurodivergencia". Los hallazgos de la IA son **hipótesis que la persona confirma**.
-- "No sé" disponible en todas las preguntas.
-- Lenguaje llano, una acción por pantalla, navegación predecible.
-- Sin rachas, sin presión de tiempo, todo se puede saltar.
-- Respeta *Reducir movimiento* y *Dynamic Type*; paleta de bajo estímulo.
+- Nada de diagnósticos ni "puntuación de neurodivergencia". El sujeto de las frases es el entorno, no la persona.
+- Los hallazgos de la IA son **hipótesis que la persona confirma**.
+- "No sé" disponible en todas las preguntas. Todo se puede saltar, y no hay rachas ni presión de tiempo.
+- El empleador no tiene acceso a nada.
+- Reglas de lenguaje, color, movimiento y medición en [`docs/DESIGN.md`](DESIGN.md).
 
 ## 3. Inteligencia artificial
 
 ### 3.1 Arquitectura híbrida
 
-| Capa | Qué hace | Tecnología |
-|---|---|---|
-| Visión y razonamiento | Detecta reflejos, iluminación, saturación visual y ubicación; devuelve ≤ 3 marcadores (x, y normalizados) en JSON | Claude Sonnet 5.5 (API) |
-| Audio | Nivel en dB, constante vs. intermitente, eventos (voces, teclado, zumbido de clima, tráfico, música…) | Procesamiento de señal propio + **clasificador de audio entrenado por nosotros**, en CPU dentro de la API |
-| Decisión | Elige el único ajuste a proponer | **Motor personal propio** (bandit contextual) |
-| Redacción | Redacta el ajuste concreto, las tarjetas y la solicitud a la empresa | Claude Haiku 5.5 |
+| Capa | Qué hace | Tecnología | Estado |
+|---|---|---|---|
+| Decisión | Elige el único ajuste a proponer y aprende de cada resultado | **Motor personal propio** (Thompson sampling, `apps/api/src/engine.rs`) | Hecho |
+| Visión | Hipótesis sobre reflejos, luz y saturación visual: ≤ 3 marcadores en JSON | Claude Sonnet 5.5 (API), con caras pixeladas antes de enviar | Iteración 2 |
+| Audio | Nivel aproximado, constante vs. intermitente, voces, teclado, clima | Procesado **en el teléfono**; al servidor solo llegan niveles por banda. Clasificador propio entrenado sobre esos rasgos | Iteración 2 |
+| Redacción | Pule la solicitud a la empresa y las tarjetas de aprendizaje | Claude Haiku 5.5 (hoy: plantillas) | Iteración 3 |
 
-La idea central del pitch: **el modelo de lenguaje percibe y redacta, pero qué ajuste proponer lo decide un modelo que aprende de la evidencia de cada persona.** Por eso no es genérico, y se puede medir y explicar ("te funcionó 2 de 2 veces leyendo").
+La idea central del pitch: **el modelo de lenguaje percibe y redacta, pero qué ajuste proponer lo decide un modelo que aprende de la evidencia de cada persona.** Por eso no es genérico, y se puede medir y explicar ("ayudó 2 de 3 veces leyendo en este escritorio").
 
 Gemini queda como proveedor alternativo detrás de la variable `AI_PROVIDER`, por si los créditos del challenge resultan útiles o Claude falla.
 
@@ -60,23 +65,24 @@ Gemini queda como proveedor alternativo detrás de la variable `AI_PROVIDER`, po
 
 ### 3.3 Modelo de audio propio (track de Quique, en paralelo)
 
-Una cabeza de clasificación entrenada sobre un modelo preentrenado en AudioSet, con datos públicos y **grabaciones del equipo en oficinas reales**. Se exporta a ONNX y corre en CPU dentro de la API (< 100 ms por audio). Nos da una historia real de "entrenamos nuestro modelo", con métricas, sin riesgo en la demo. El contrato y la receta están en [`ml/README.md`](../ml/README.md).
+Una cabeza de clasificación entrenada sobre un modelo preentrenado en AudioSet, con datos públicos y **grabaciones del equipo en oficinas reales**. Grabar conversaciones de colegas es el caso prohibido en los tres países, así que el audio se procesa en el teléfono y nunca se envía la forma de onda. Por eso el modelo se entrena sobre **rasgos que no permiten reconstruir la voz**: niveles por banda y por segundo. Sigue dando una historia real de "entrenamos nuestro modelo", con métricas. El contrato está en [`ml/README.md`](../ml/README.md) y se ajusta en la iteración 2.
 
 ### 3.4 Motor personal (el diferenciador)
 
-- **Catálogo** curado de ~30 ajustes. Cada uno indica: estímulo que atiende, tareas donde aplica, si es propio o se pide a la empresa, y esfuerzo de implementarlo.
-- **Contexto** de cada prueba: estímulo confirmado × tipo de tarea × espacio.
-- **Modelo:** para cada persona y ajuste, una distribución Beta(α, β) de "probabilidad de que me ayude" en ese contexto.
-  - Si hay pocos datos, se usa el siguiente nivel de detalle: persona+estímulo+tarea → persona+estímulo → prior global (catálogo + datos agregados de todos).
-- **Elección:** Thompson sampling entre los ajustes viables (filtrados por lo que la persona dijo que puede modificar). Así explora sin dejar de proponer lo que ya le funcionó.
-- **Recompensa:** 1 si el esfuerzo bajó al menos un punto, 0 si no; "no lo probé" no actualiza.
-- **Explicación:** cada propuesta muestra por qué ("te funcionó 2 de 2 veces leyendo en este escritorio").
+- **Catálogo** versionado (`apps/api/catalog/catalog.json`): 13 estímulos en 4 dominios y 29 ajustes en español e inglés. Cada ajuste dice qué estímulos atiende, si es propio o se pide, y para qué tareas no aplica. Las pruebas garantizan que cada estímulo tenga un ajuste propio para cada tarea.
+- **Contexto** de cada prueba: estímulo × tarea × lugar.
+- **Modelo:** una Beta(α, β) por ajuste con un prior débil del catálogo (α + β = 2). Se suma la evidencia de la persona en ese contexto (peso 1), la de la persona en otros contextos (peso 0.5) y la de todas las personas (peso 0.1, con un tope equivalente a 3 pruebas).
+- **Elección:** Thompson sampling, más un 10 % de exploración al azar. Lo que falló dos veces en un contexto sin ningún éxito deja de proponerse mientras haya otras opciones.
+- **Recompensa relativa:** "ayudó" significa que la molestia del entorno bajó **más que la mejora típica de esa persona**, calculada con sus últimos 20 registros y ajustada hacia 0.5 cuando hay pocos. Si hay al menos 2 comparaciones "sin cambios", se usan solo esas. Si la persona dice que no ayudó, no ayudó.
+- **Explicación al estilo Self-E:** primer intento, "probemos algo nuevo para aprender", o "ayudó X de Y veces aquí". Desde 3 pruebas se da una frase tentativa y desde 5 una más firme.
 
 ### 3.5 Privacidad
 
-- La foto y el audio se analizan y **se descartan**: el servidor solo guarda lo derivado (marcadores, etiquetas, dB).
-- La foto se queda en el teléfono para dibujar los marcadores. Importa porque en una oficina salen compañeros.
-- Cuenta anónima por dispositivo y botón **Borrar mis datos**.
+- Cuenta anónima: el servidor guarda solo el SHA-256 de la llave del dispositivo.
+- **Consentimiento expreso**, sin marcar de antemano, versionado y guardado con fecha. El aviso está en `GET /privacy` (LFPDPPP art. 8 y Apple 5.1.1).
+- El botón **Borrar todos mis datos** borra en cascada en el servidor y limpia el teléfono.
+- Cero acceso del empleador. Nada sale de la app salvo lo que la persona comparte.
+- *Iteración 2:* consentimientos aparte para micrófono y foto; caras pixeladas en el teléfono antes de enviar; la foto y el audio nunca se guardan; se pide a Claude que no describa personas, emociones ni salud.
 
 ### 3.6 Costo
 
@@ -93,10 +99,10 @@ App Expo (iOS / TestFlight)  ──HTTPS──►  API Rust/Axum (Railway, Docke
 
 ### 4.1 App — `apps/mobile`
 
-- Expo SDK más reciente, TypeScript, Expo Router.
-- `expo-camera` / `expo-image-picker`, `expo-audio` (WAV 16 kHz mono en iOS), `expo-notifications` (solo locales), `expo-secure-store`.
-- TanStack Query para datos del servidor; i18n **es/en** (los jueces de ASU probablemente evalúan en inglés).
-- **Solo módulos compatibles con Expo Go**, para que el plan B (QR) siempre funcione.
+- Expo SDK 58, TypeScript, Expo Router con pestañas nativas (`expo-router/native-tabs`) y encabezados nativos.
+- `expo-secure-store` (llave del dispositivo), `@react-native-async-storage/async-storage` (preferencias), `expo-notifications` (solo avisos locales), `expo-haptics` (apagado por defecto), `expo-symbols` (SF Symbols), TanStack Query.
+- Textos en **es/en** (`src/i18n/`), según el idioma del teléfono o el que elija la persona.
+- Solo módulos incluidos en Expo Go, para que el plan B por QR siga funcionando.
 
 ### 4.2 API — `apps/api` (Rust)
 
@@ -105,14 +111,13 @@ App Expo (iOS / TestFlight)  ──HTTPS──►  API Rust/Axum (Railway, Docke
 | Pieza | Crate |
 |---|---|
 | Servidor HTTP | `axum` + `tokio` + `tower-http` (CORS, límites de tamaño, trazas) |
-| Base de datos | `sqlx` (Postgres, migraciones) |
-| Modelo de audio | `ort` (ONNX Runtime) |
-| Decodificar audio | `symphonia` (WAV de iOS; AAC/M4A de Android) |
-| Claude API | cliente propio con `reqwest` + `serde` (no hay SDK oficial de Rust) |
-| Auth | `jsonwebtoken` |
+| Base de datos | `sqlx` 0.9 (Postgres 18, migraciones al arrancar) |
+| Motor personal | `rand` + `rand_distr` (Beta) |
+| Auth | Llave del dispositivo → SHA-256 (`sha2`); sin contraseñas ni JWT |
+| Claude API (iteración 2) | cliente propio con `reqwest` + `serde` (no hay SDK oficial de Rust) |
 | Logs | `tracing` |
 
-Docker multi-stage con `cargo-chef` para que las builds en Railway reutilicen dependencias compiladas.
+Docker multi-stage con `cargo-chef` para que las builds en Railway reutilicen dependencias compiladas. El catálogo se valida al arrancar: si está roto, el healthcheck nunca pasa y no se despliega.
 
 ### 4.3 Dónde se va el tiempo (y cómo lo bajamos)
 
@@ -130,22 +135,24 @@ El lenguaje del backend no es lo que hará sentir lenta la app; lo es la llamada
 
 | Método y ruta | Qué hace |
 |---|---|
-| `POST /v1/auth/device` | Cuenta anónima por dispositivo → JWT |
-| `GET/POST /v1/spaces` | Espacios de trabajo de la persona |
-| `POST /v1/checkins` | Dificultad, tarea, espacio, esfuerzo inicial |
-| `POST /v1/checkins/{id}/audio` | Audio 10 s → observaciones (rápido) |
-| `POST /v1/checkins/{id}/photo` | Foto → hasta 3 marcadores (usa el audio como contexto) |
-| `POST /v1/checkins/{id}/answers` | Sí / No / No sé + qué puedo modificar → **un** ajuste |
-| `POST /v1/checkins/{id}/outcome` | Esfuerzo final → resultado + tarjeta de aprendizaje |
-| `GET /v1/playbook` | Mis ajustes que funcionan, por tarea × espacio |
-| `GET /v1/insights` | Tarjetas de aprendizaje |
-| `POST /v1/requests` | Solicitud de ajuste para la empresa |
-| `DELETE /v1/me` | Borrar todos mis datos |
-| `GET /health` | Salud del servicio |
+| `POST /v1/auth/device` | Crea la cuenta anónima (requiere `consent_version`) o confirma que existe |
+| `GET/PATCH/DELETE /v1/me` | Idioma y borrar todos los datos |
+| `GET/POST /v1/spaces`, `DELETE /v1/spaces/{id}` | Lugares de trabajo |
+| `GET /v1/catalog?locale=` | Tareas, sensaciones, dominios, estímulos y ajustes |
+| `POST /v1/checkins` | Registra respuestas y devuelve **una** sugerencia |
+| `POST /v1/checkins/{id}/decline` | "Otra idea" o "no puedo aquí" → siguiente sugerencia |
+| `POST /v1/checkins/{id}/accept` | Empieza la prueba (con o sin recordatorio) |
+| `POST /v1/checkins/{id}/outcome` | Molestia, esfuerzo y "¿ayudó?" → resultado relativo |
+| `POST /v1/checkins/{id}/abandon`, `GET /v1/checkins[?status=]`, `GET /v1/checkins/{id}` | Dejarlo e historial |
+| `GET /v1/playbook` | Lo que me sirve, por tarea × lugar × estímulo |
+| `GET /privacy` | Aviso de privacidad (es/en) |
+| `GET /health` | Salud del servicio, versión y commit |
+
+Prueba de punta a punta: `scripts/smoke-api.sh [URL]` (27 comprobaciones; crea y borra una cuenta desechable).
 
 ### 4.5 Datos
 
-`users`, `spaces`, `checkins`, `observations` (origen foto/audio/pregunta, estímulo, respuesta), `adjustments` (catálogo), `trials` (ajuste probado + contexto + resultado).
+`users` (hash de la llave, idioma, consentimiento), `spaces`, `checkins` (tarea, sensación, molestia y esfuerzo antes y después, estímulo foco, ajuste, ideas descartadas, mejora, mejora típica, opinión, resultado), `observations` (estímulo y respuesta; desde la iteración 2 también de foto y audio) y `space_blocks` (lo que no se puede hacer en cada lugar).
 
 ## 5. Repos y despliegue
 
@@ -181,29 +188,26 @@ Los espejos se actualizan con `scripts/sync-team-repos.sh` al cerrar cada iterac
 
 Cada iteración termina con: deploy en Railway + build o update en TestFlight + sync a los espejos.
 
-| # | Días | Entregable |
+| # | Estado | Entregable |
 |---|---|---|
-| 0 | 1 | **Cimientos.** Monorepo, app "hola" en TestFlight interno, API Rust `/health` + Postgres en Railway, sync a espejos funcionando |
-| 1 | 2–3 | **Ciclo completo sin IA:** inicio, espacios, registrar, preguntas, ajuste por reglas, comprobar, Mis ajustes. **Esto ya es un FMVP.** Se abre el enlace público de TestFlight |
-| 2 | 4–5 | **Escaneo multimodal:** audio + foto con revisión, Claude visión, audio propio, marcadores sobre la foto, confirmar hipótesis |
-| 3 | 6 | **Motor personal**, tarjetas de aprendizaje, "¿por qué esta sugerencia?", solicitud a la empresa |
-| 4 | 7 | **Pulido:** accesibilidad, inglés, errores y sin conexión, borrar datos, usuario demo con historial sembrado |
-| 5 | 8–9 | **Validación** con 3–5 personas (idealmente vía Specialisterne) y ajustes según su feedback |
-| 6 | 10 | **Pitch:** guion de demo, métricas reales de uso, video de respaldo por si falla la demo en vivo |
-| ‖ | 2–5 | **Modelo de audio** (Quique, GPU) → ONNX; se conecta en la iteración 2–3 |
+| 0 | ✅ 26 oct | Monorepo, API Rust + Postgres en Railway, app en TestFlight (1.0.0) y sync a los espejos |
+| 1 | ✅ 26 oct | **Ciclo completo sin IA (FMVP)** con la investigación aplicada: registrar, descubrir, sugerencia con motivo, comparación, recordatorio, resultado relativo, Lo que me sirve, solicitud a la empresa, es/en y accesibilidad. App 1.1.0 + API 0.2.0 |
+| 2 | Siguiente | **Escaneo multimodal:** foto con caras pixeladas en el teléfono y Claude Sonnet 5.5 para las hipótesis; audio en el teléfono con niveles por banda; consentimientos aparte. **Requiere `ANTHROPIC_API_KEY` en Railway** |
+| 3 | | Redacción con Claude Haiku 5.5 (solicitud y tarjetas), "¿qué puede pedirte tu empresa?" por país y tarjetas de aprendizaje |
+| 4 | | Usuario demo con historial sembrado, revisión de accesibilidad con VoiceOver y texto grande, y enlace público de TestFlight |
+| 5 | | **Validación** con 3–5 personas, idealmente vía Specialisterne y con co-diseño pagado |
+| 6 | | **Pitch:** guion de demo, métricas reales, limitaciones declaradas (tabla del informe) y video de respaldo |
+| ‖ | | **Modelo de audio** (Quique, GPU) sobre niveles por banda → ONNX; se conecta en la iteración 2 |
 
-### Checklist de la iteración 0
+### Checklist de la iteración 1
 
-- [x] Quique: `eas login` y `railway login`
-- [x] Instalar Rust con `rustup`
-- [x] Mover el monorepo fuera de OneDrive → `C:\dev\AIChallenge`
-- [x] `apps/mobile`: proyecto Expo SDK 58, bundle id, ícono, `eas.json` (preview / production), EAS Update
-- [x] `apps/api`: Axum con `/health`, migraciones sqlx, Dockerfile con cargo-chef
-- [x] Railway: proyecto + Postgres + servicio `api` conectado a GitHub
-- [x] Primera build iOS (1.0.0 build 1) en TestFlight; app creada en App Store Connect
-- [x] App instalada desde TestFlight en el iPhone de Quique (grupo Team (Expo)), conectada a la API
-- [ ] Agregar al resto del equipo como probadores internos
-- [x] Primer sync a los espejos (monorepo@d48b337)
+- [x] Investigación psicológica y práctica (5 temas) e informe con 23 decisiones de producto
+- [x] Reglas de diseño (`docs/DESIGN.md`) a partir de la investigación y de las skills de Expo y Anthropic
+- [x] API 0.2: cuentas, lugares, catálogo, registros, motor personal, resultado relativo, comparación, consentimiento y aviso de privacidad
+- [x] App 1.1: bienvenida, registro, sugerencia, recordatorio, resultado, Lo que me sirve, solicitud y ajustes
+- [x] Smoke test de punta a punta contra producción
+- [ ] Probar la build 1.1.0 en un iPhone (Quique)
+- [ ] Definir el correo de contacto del equipo para el aviso de privacidad, antes del TestFlight externo
 
 ## 7. Demo de 2 minutos
 
@@ -229,4 +233,7 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 
 ## 9. Decisiones pendientes
 
-- **Contacto en Specialisterne** para las pruebas con usuarios de la iteración 5.
+- **Correo de contacto** del equipo para el aviso de privacidad (lo exige la LFPDPPP y conviene para Apple).
+- **`ANTHROPIC_API_KEY`** en Railway para la iteración 2.
+- **Contacto en Specialisterne** para las pruebas con usuarios y el co-diseño de la iteración 5.
+- Si el piloto en TestFlight cuenta como investigación con personas, ¿hace falta consentimiento informado y un comité de ética?
