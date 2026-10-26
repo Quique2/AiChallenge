@@ -76,6 +76,10 @@ expect "['checkin']['outcome']" helped "resultado"
 expect "['here']['trials']" 1 "pruebas en este contexto"
 check "resultado repetido → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/checkins/$CHECKIN_ID/outcome" -d '{"effort_after":2,"discomfort_after":1,"attribution":"yes"}'
 
+# El escaneo real gasta tokens: aquí solo se prueba que rechace lo inválido.
+check "foto que no es JPEG → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/scan/photo" -d '{"image_base64":"aG9sYQ==","task":"reading"}'
+check "audio inválido → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/scan/photo" -d '{"image_base64":"aG9sYQ==","task":"reading","audio":["smells"]}'
+
 check "mis ajustes" 200 "${AUTH[@]}" "$BASE/v1/playbook"
 expect ".__len__()" 1 "entradas en mis ajustes"
 expect "[0]['adjustment']['id']" "$ADJUSTMENT" "ajuste guardado"
