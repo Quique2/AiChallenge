@@ -203,7 +203,7 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 - [x] Primera build iOS (1.0.0 build 1) en TestFlight; app creada en App Store Connect
 - [x] App instalada desde TestFlight en el iPhone de Quique (grupo Team (Expo)), conectada a la API
 - [ ] Agregar al resto del equipo como probadores internos
-- [ ] Primer sync a los espejos
+- [x] Primer sync a los espejos (monorepo@d48b337)
 
 ## 7. Demo de 2 minutos
 
