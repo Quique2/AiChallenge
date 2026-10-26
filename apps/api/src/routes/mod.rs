@@ -1,6 +1,12 @@
+mod account;
+mod checkins;
 mod health;
+mod spaces;
 
-use axum::{Router, routing::get};
+use axum::{
+    Router,
+    routing::{delete, get, post},
+};
 use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLayer};
 
 use crate::AppState;
@@ -9,8 +15,26 @@ use crate::AppState;
 const MAX_BODY_BYTES: usize = 10 * 1024 * 1024;
 
 pub fn router(state: AppState) -> Router {
+    let v1 = Router::new()
+        .route("/auth/device", post(account::login_device))
+        .route(
+            "/me",
+            get(account::get_me).patch(account::update_me).delete(account::delete_me),
+        )
+        .route("/spaces", get(spaces::list_spaces).post(spaces::create_space))
+        .route("/spaces/{id}", delete(spaces::delete_space))
+        .route("/catalog", get(checkins::get_catalog))
+        .route("/checkins", get(checkins::list_checkins).post(checkins::create_checkin))
+        .route("/checkins/{id}", get(checkins::get_checkin))
+        .route("/checkins/{id}/decline", post(checkins::decline))
+        .route("/checkins/{id}/accept", post(checkins::accept))
+        .route("/checkins/{id}/outcome", post(checkins::record_outcome))
+        .route("/checkins/{id}/abandon", post(checkins::abandon))
+        .route("/playbook", get(checkins::playbook));
+
     Router::new()
         .route("/health", get(health::health))
+        .nest("/v1", v1)
         .layer(RequestBodyLimitLayer::new(MAX_BODY_BYTES))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
