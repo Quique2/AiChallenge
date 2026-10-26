@@ -50,8 +50,8 @@ Decisiones que ya están en el producto: medida principal de molestia del entorn
 | Capa | Qué hace | Tecnología | Estado |
 |---|---|---|---|
 | Decisión | Elige el único ajuste a proponer y aprende de cada resultado | **Motor personal propio** (Thompson sampling, `apps/api/src/engine.rs`) | Hecho |
-| Visión | Hipótesis sobre reflejos, luz y saturación visual: ≤ 3 marcadores en JSON | Claude Sonnet 5.5 (API), con caras pixeladas antes de enviar | Iteración 2 |
-| Audio | Nivel aproximado, constante vs. intermitente, voces, teclado, clima | Procesado **en el teléfono**; al servidor solo llegan niveles por banda. Clasificador propio entrenado sobre esos rasgos | Iteración 2 |
+| Visión | Hipótesis sobre reflejos, luz y saturación visual: ≤ 3 marcadores en JSON | Claude Opus 5.5 (API, salida estructurada y respaldos del servidor), con caras pixeladas en el teléfono | Hecho |
+| Audio | Voces, ruido constante y ruidos repentinos | **En el teléfono** (`audio-features.ts`); el audio se borra y nunca se envía. El modelo propio se entrena sobre rasgos no reconstruibles | Heurística hecha; modelo en curso |
 | Redacción | Pule la solicitud a la empresa y las tarjetas de aprendizaje | Claude Haiku 5.5 (hoy: plantillas) | Iteración 3 |
 
 La idea central del pitch: **el modelo de lenguaje percibe y redacta, pero qué ajuste proponer lo decide un modelo que aprende de la evidencia de cada persona.** Por eso no es genérico, y se puede medir y explicar ("ayudó 2 de 3 veces leyendo en este escritorio").
@@ -82,11 +82,16 @@ Una cabeza de clasificación entrenada sobre un modelo preentrenado en AudioSet,
 - **Consentimiento expreso**, sin marcar de antemano, versionado y guardado con fecha. El aviso está en `GET /privacy` (LFPDPPP art. 8 y Apple 5.1.1).
 - El botón **Borrar todos mis datos** borra en cascada en el servidor y limpia el teléfono.
 - Cero acceso del empleador. Nada sale de la app salvo lo que la persona comparte.
-- *Iteración 2:* consentimientos aparte para micrófono y foto; caras pixeladas en el teléfono antes de enviar; la foto y el audio nunca se guardan; se pide a Claude que no describa personas, emociones ni salud.
+- **Foto y sonido** (iteración 2): son opcionales y cada uno tiene su propio consentimiento, apagado por defecto y revocable en Ajustes.
+  - **Sonido:** se analiza y se borra en el teléfono; nunca se envía.
+  - **Foto:** un módulo nativo (Apple Vision + Core Image) pixela caras y siluetas antes de enviarla, y la persona ve exactamente lo que se enviará. La API la tiene solo en memoria y no la guarda ni la registra.
+  - **Instrucciones a Claude:** no describir personas, emociones ni salud, y formular cada hallazgo como hipótesis. Solo lo que la persona confirma cuenta.
+  - **En Expo Go,** sin el módulo nativo, la foto no sale del teléfono.
+  - **Anthropic:** borra las entradas de la API en 30 días y no entrena con ellas por defecto.
 
 ### 3.6 Costo
 
-Cada escaneo usa unos pocos miles de tokens (foto reducida a ~1024 px + instrucciones + JSON corto). Con el crédito disponible (~200 USD) alcanza para miles de escaneos. Las tarifas exactas se confirman al integrar la API; habrá límite diario por usuario para evitar sorpresas.
+Medido el 26 oct: un escaneo con Claude Opus 5.5 ($4 / $20 por millón de tokens de entrada y de salida) tarda 4–10 s y cuesta del orden de 3 centavos de dólar. Con ~200 USD alcanza para unos miles de escaneos. Hay un límite de 30 escaneos al día por persona y se registran los tokens de cada uno (tabla `scans`, sin imágenes). Para bajar a la mitad el costo y la latencia, basta poner `CLAUDE_VISION_MODEL=claude-sonnet-5-5` en Railway.
 
 ## 4. Arquitectura técnica
 
@@ -102,7 +107,7 @@ App Expo (iOS / TestFlight)  ──HTTPS──►  API Rust/Axum (Railway, Docke
 - Expo SDK 58, TypeScript, Expo Router con pestañas nativas (`expo-router/native-tabs`) y encabezados nativos.
 - `expo-secure-store` (llave del dispositivo), `@react-native-async-storage/async-storage` (preferencias), `expo-notifications` (solo avisos locales), `expo-haptics` (apagado por defecto), `expo-symbols` (SF Symbols), TanStack Query.
 - Textos en **es/en** (`src/i18n/`), según el idioma del teléfono o el que elija la persona.
-- Solo módulos incluidos en Expo Go, para que el plan B por QR siga funcionando.
+- Iteración 2: `expo-camera`, `expo-audio`, `expo-image-manipulator`, `expo-file-system` y el módulo local `modules/privacy-blur` (Swift). Este último no existe en Expo Go: ahí funciona todo menos enviar la foto.
 
 ### 4.2 API — `apps/api` (Rust)
 
@@ -114,7 +119,7 @@ App Expo (iOS / TestFlight)  ──HTTPS──►  API Rust/Axum (Railway, Docke
 | Base de datos | `sqlx` 0.9 (Postgres 18, migraciones al arrancar) |
 | Motor personal | `rand` + `rand_distr` (Beta) |
 | Auth | Llave del dispositivo → SHA-256 (`sha2`); sin contraseñas ni JWT |
-| Claude API (iteración 2) | cliente propio con `reqwest` + `serde` (no hay SDK oficial de Rust) |
+| Claude API | `src/claude.rs`: HTTP con `reqwest` (no hay SDK oficial de Rust), salida estructurada (`output_config.format`) y `fallbacks: "default"` |
 | Logs | `tracing` |
 
 Docker multi-stage con `cargo-chef` para que las builds en Railway reutilicen dependencias compiladas. El catálogo se valida al arrancar: si está roto, el healthcheck nunca pasa y no se despliega.
@@ -145,6 +150,7 @@ El lenguaje del backend no es lo que hará sentir lenta la app; lo es la llamada
 | `POST /v1/checkins/{id}/outcome` | Molestia, esfuerzo y "¿ayudó?" → resultado relativo |
 | `POST /v1/checkins/{id}/abandon`, `GET /v1/checkins[?status=]`, `GET /v1/checkins/{id}` | Dejarlo e historial |
 | `GET /v1/playbook` | Lo que me sirve, por tarea × lugar × estímulo |
+| `POST /v1/scan/photo` | JPEG ya pixelado + tarea + pistas del audio → hasta 3 hipótesis con punto y pregunta (503 sin llave, 429 al pasar el límite diario) |
 | `GET /privacy` | Aviso de privacidad (es/en) |
 | `GET /health` | Salud del servicio, versión y commit |
 
@@ -152,7 +158,7 @@ Prueba de punta a punta: `scripts/smoke-api.sh [URL]` (27 comprobaciones; crea y
 
 ### 4.5 Datos
 
-`users` (hash de la llave, idioma, consentimiento), `spaces`, `checkins` (tarea, sensación, molestia y esfuerzo antes y después, estímulo foco, ajuste, ideas descartadas, mejora, mejora típica, opinión, resultado), `observations` (estímulo y respuesta; desde la iteración 2 también de foto y audio) y `space_blocks` (lo que no se puede hacer en cada lugar).
+`users` (hash de la llave, idioma, consentimiento), `spaces`, `checkins` (tarea, sensación, molestia y esfuerzo antes y después, estímulo foco, ajuste, ideas descartadas, mejora, mejora típica, opinión, resultado), `observations` (estímulo, respuesta y origen: pregunta, foto o audio), `space_blocks` (lo que no se puede hacer en cada lugar) y `scans` (modelo y tokens de cada análisis, sin imagen).
 
 ## 5. Repos y despliegue
 
@@ -192,12 +198,21 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 |---|---|---|
 | 0 | ✅ 26 oct | Monorepo, API Rust + Postgres en Railway, app en TestFlight (1.0.0) y sync a los espejos |
 | 1 | ✅ 26 oct | **Ciclo completo sin IA (FMVP)** con la investigación aplicada: registrar, descubrir, sugerencia con motivo, comparación, recordatorio, resultado relativo, Lo que me sirve, solicitud a la empresa, es/en y accesibilidad. App 1.1.0 + API 0.2.0 |
-| 2 | Siguiente | **Escaneo multimodal:** foto con caras pixeladas en el teléfono y Claude Sonnet 5.5 para las hipótesis; audio en el teléfono con niveles por banda; consentimientos aparte. **Requiere `ANTHROPIC_API_KEY` en Railway** |
+| 2 | ✅ 26 oct | **Escaneo con foto y sonido:** consentimientos aparte, audio en el teléfono, foto pixelada en el teléfono y Claude Opus 5.5 con hipótesis que la persona confirma. App 1.2.0 + API 0.3.0 |
 | 3 | | Redacción con Claude Haiku 5.5 (solicitud y tarjetas), "¿qué puede pedirte tu empresa?" por país y tarjetas de aprendizaje |
 | 4 | | Usuario demo con historial sembrado, revisión de accesibilidad con VoiceOver y texto grande, y enlace público de TestFlight |
 | 5 | | **Validación** con 3–5 personas, idealmente vía Specialisterne y con co-diseño pagado |
 | 6 | | **Pitch:** guion de demo, métricas reales, limitaciones declaradas (tabla del informe) y video de respaldo |
 | ‖ | | **Modelo de audio** (Quique, GPU) sobre niveles por banda → ONNX; se conecta en la iteración 2 |
+
+### Checklist de la iteración 2
+
+- [x] `POST /v1/scan/photo` con salida estructurada, respaldos del servidor, límite diario y registro de tokens
+- [x] Escaneo real probado contra producción (4–10 s; hipótesis prudentes y sin describir personas)
+- [x] Audio en el teléfono: voces, ruido constante y ruidos repentinos, probados con señales sintéticas
+- [x] Módulo nativo `privacy-blur` y pantallas de consentimiento, escuchar, foto y "Esto es lo que notamos"
+- [ ] Probar en un iPhone la build 1.2.0, sobre todo el pixelado y los umbrales del audio en oficinas reales
+- [ ] Medir cuánto inventa Claude con 20 fotos reales de oficina (decisión 22 del informe)
 
 ### Checklist de la iteración 1
 
@@ -234,6 +249,5 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 ## 9. Decisiones pendientes
 
 - **Correo de contacto** del equipo para el aviso de privacidad (lo exige la LFPDPPP y conviene para Apple).
-- **`ANTHROPIC_API_KEY`** en Railway para la iteración 2.
 - **Contacto en Specialisterne** para las pruebas con usuarios y el co-diseño de la iteración 5.
 - Si el piloto en TestFlight cuenta como investigación con personas, ¿hace falta consentimiento informado y un comité de ética?

@@ -67,7 +67,11 @@ La app habla del **entorno**, no de la persona. No diagnostica, no puntúa y no 
 - Consentimiento expreso para guardar registros, sin marcar de antemano. El aviso está en `GET /privacy` de la API.
 - El empleador no tiene acceso. La solicitud de ajuste se comparte desde la app solo si la persona lo decide, y los datos propios van solo si los incluye.
 - "Borrar todos mis datos" en Ajustes borra el servidor y el teléfono.
-- Cuando entren foto y audio (iteración 2): el audio se procesa en el teléfono; la foto no se guarda y se pide a la IA que no describa personas. Cada hallazgo de la IA es una hipótesis que la persona confirma, y solo lo confirmado cuenta.
+- **Foto y sonido** son opcionales, cada uno con su consentimiento (apagado por defecto y revocable en Ajustes).
+  - El audio se analiza en el teléfono y se borra; nunca se envía. Mientras se graba hay un indicador visible y un botón "Detener".
+  - La foto se toma con la cámara de la app (sin acceso a la fototeca). Las caras y siluetas se pixelan en el teléfono, y la persona ve exactamente lo que se enviará.
+  - Cada hallazgo es una pregunta prudente ("Parece haber…", "Posible…") con Sí / No / No sé. Solo lo confirmado cuenta, y se guarda de dónde vino.
+  - Los marcadores sobre la foto repiten una lista, que es la que lee VoiceOver.
 
 ## 9. Skills para quien trabaje con Claude Code
 
