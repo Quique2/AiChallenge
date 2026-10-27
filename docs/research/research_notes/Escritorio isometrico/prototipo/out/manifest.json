@@ -1,0 +1,423 @@
+{
+ "version": 1,
+ "tile": [
+  32,
+  16
+ ],
+ "voxelsPerTile": 8,
+ "atlas": "atlas.png",
+ "size": [
+  256,
+  159
+ ],
+ "frames": {
+  "bookshelf.r0": {
+   "rect": [
+    0,
+    0,
+    26,
+    50
+   ],
+   "anchor": [
+    9,
+    37
+   ],
+   "footprint": [
+    1,
+    1
+   ],
+   "kind": "floor"
+  },
+  "bookshelf.r1": {
+   "rect": [
+    27,
+    0,
+    26,
+    50
+   ],
+   "anchor": [
+    17,
+    37
+   ],
+   "footprint": [
+    1,
+    1
+   ],
+   "kind": "floor"
+  },
+  "bookshelf.r2": {
+   "rect": [
+    54,
+    0,
+    26,
+    50
+   ],
+   "anchor": [
+    9,
+    37
+   ],
+   "footprint": [
+    1,
+    1
+   ],
+   "kind": "floor"
+  },
+  "bookshelf.r3": {
+   "rect": [
+    81,
+    0,
+    26,
+    50
+   ],
+   "anchor": [
+    17,
+    37
+   ],
+   "footprint": [
+    1,
+    1
+   ],
+   "kind": "floor"
+  },
+  "chair.r0": {
+   "rect": [
+    134,
+    92,
+    28,
+    35
+   ],
+   "anchor": [
+    13,
+    20
+   ],
+   "footprint": [
+    1,
+    1
+   ],
+   "kind": "floor"
+  },
+  "chair.r1": {
+   "rect": [
+    19,
+    129,
+    28,
+    28
+   ],
+   "anchor": [
+    13,
+    13
+   ],
+   "footprint": [
+    1,
+    1
+   ],
+   "kind": "floor"
+  },
+  "chair.r2": {
+   "rect": [
+    48,
+    129,
+    28,
+    28
+   ],
+   "anchor": [
+    15,
+    13
+   ],
+   "footprint": [
+    1,
+    1
+   ],
+   "kind": "floor"
+  },
+  "chair.r3": {
+   "rect": [
+    163,
+    92,
+    28,
+    35
+   ],
+   "anchor": [
+    15,
+    20
+   ],
+   "footprint": [
+    1,
+    1
+   ],
+   "kind": "floor"
+  },
+  "desk.r0": {
+   "rect": [
+    108,
+    0,
+    50,
+    40
+   ],
+   "anchor": [
+    17,
+    15
+   ],
+   "footprint": [
+    2,
+    1
+   ],
+   "kind": "floor"
+  },
+  "desk.r1": {
+   "rect": [
+    159,
+    0,
+    50,
+    40
+   ],
+   "anchor": [
+    33,
+    15
+   ],
+   "footprint": [
+    1,
+    2
+   ],
+   "kind": "floor"
+  },
+  "desk.r2": {
+   "rect": [
+    0,
+    51,
+    50,
+    40
+   ],
+   "anchor": [
+    17,
+    15
+   ],
+   "footprint": [
+    2,
+    1
+   ],
+   "kind": "floor"
+  },
+  "desk.r3": {
+   "rect": [
+    51,
+    51,
+    50,
+    40
+   ],
+   "anchor": [
+    33,
+    15
+   ],
+   "footprint": [
+    1,
+    2
+   ],
+   "kind": "floor"
+  },
+  "lamp.r0": {
+   "rect": [
+    122,
+    129,
+    14,
+    24
+   ],
+   "anchor": [
+    7,
+    17
+   ],
+   "footprint": [
+    0,
+    0
+   ],
+   "kind": "surface"
+  },
+  "lamp.r1": {
+   "rect": [
+    92,
+    129,
+    14,
+    25
+   ],
+   "anchor": [
+    9,
+    18
+   ],
+   "footprint": [
+    0,
+    0
+   ],
+   "kind": "surface"
+  },
+  "lamp.r2": {
+   "rect": [
+    77,
+    129,
+    14,
+    26
+   ],
+   "anchor": [
+    7,
+    19
+   ],
+   "footprint": [
+    0,
+    0
+   ],
+   "kind": "surface"
+  },
+  "lamp.r3": {
+   "rect": [
+    107,
+    129,
+    14,
+    25
+   ],
+   "anchor": [
+    5,
+    18
+   ],
+   "footprint": [
+    0,
+    0
+   ],
+   "kind": "surface"
+  },
+  "plant.r0": {
+   "rect": [
+    211,
+    92,
+    18,
+    30
+   ],
+   "anchor": [
+    9,
+    17
+   ],
+   "footprint": [
+    1,
+    1
+   ],
+   "kind": "floor"
+  },
+  "plant.r1": {
+   "rect": [
+    230,
+    92,
+    18,
+    30
+   ],
+   "anchor": [
+    9,
+    17
+   ],
+   "footprint": [
+    1,
+    1
+   ],
+   "kind": "floor"
+  },
+  "plant.r2": {
+   "rect": [
+    0,
+    129,
+    18,
+    30
+   ],
+   "anchor": [
+    9,
+    17
+   ],
+   "footprint": [
+    1,
+    1
+   ],
+   "kind": "floor"
+  },
+  "plant.r3": {
+   "rect": [
+    192,
+    92,
+    18,
+    31
+   ],
+   "anchor": [
+    9,
+    18
+   ],
+   "footprint": [
+    1,
+    1
+   ],
+   "kind": "floor"
+  },
+  "rug.r0": {
+   "rect": [
+    102,
+    51,
+    66,
+    36
+   ],
+   "anchor": [
+    33,
+    3
+   ],
+   "footprint": [
+    2,
+    2
+   ],
+   "kind": "flat"
+  },
+  "rug.r1": {
+   "rect": [
+    169,
+    51,
+    66,
+    36
+   ],
+   "anchor": [
+    33,
+    3
+   ],
+   "footprint": [
+    2,
+    2
+   ],
+   "kind": "flat"
+  },
+  "rug.r2": {
+   "rect": [
+    0,
+    92,
+    66,
+    36
+   ],
+   "anchor": [
+    33,
+    3
+   ],
+   "footprint": [
+    2,
+    2
+   ],
+   "kind": "flat"
+  },
+  "rug.r3": {
+   "rect": [
+    67,
+    92,
+    66,
+    36
+   ],
+   "anchor": [
+    33,
+    3
+   ],
+   "footprint": [
+    2,
+    2
+   ],
+   "kind": "flat"
+  }
+ }
+}

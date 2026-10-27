@@ -201,10 +201,11 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 | 1 | ✅ 26 oct | **Ciclo completo sin IA (FMVP)** con la investigación aplicada: registrar, descubrir, sugerencia con motivo, comparación, recordatorio, resultado relativo, Lo que me sirve, solicitud a la empresa, es/en y accesibilidad. App 1.1.0 + API 0.2.0 |
 | 2 | ✅ 26 oct | **Escaneo con foto y sonido:** consentimientos aparte, audio en el teléfono, foto pixelada en el teléfono y Claude Opus 5.5 con hipótesis que la persona confirma. App 1.2.0 + API 0.3.0 |
 | 3 | ✅ 26 oct | **Experiencia y retención sin presión:** arreglos del permiso del micrófono y de los botones fuera de la pantalla; "Tu escritorio" (un objeto por cada prueba terminada, haya ayudado o no, que nunca se pierde); tres niveles de movimiento; sonidos suaves opcionales; resumen semanal opcional; plan "si…, entonces…". App 1.3.0 + API 0.4.0 |
-| 4 | | Redacción con Claude Haiku 5.5 (solicitud y tarjetas), "¿qué puede pedirte tu empresa?" por país y tarjetas de aprendizaje |
-| 5 | | Usuario demo con historial sembrado, revisión de accesibilidad con VoiceOver y texto grande, y enlace público de TestFlight |
-| 6 | | **Validación** con 3–5 personas, idealmente vía Specialisterne y con co-diseño pagado |
-| 7 | | **Pitch:** guion de demo, métricas reales, limitaciones declaradas (tabla del informe) y video de respaldo |
+| 4 | En revisión | **Cuarto isométrico y memoria por lugar** (sección 10): un cuarto decorable por cada lugar, cuyos objetos recuerdan cómo le fue a la persona ahí |
+| 5 | | Redacción con Claude Haiku 5.5 (solicitud y tarjetas), "¿qué puede pedirte tu empresa?" por país y tarjetas de aprendizaje |
+| 6 | | Usuario demo con historial sembrado, revisión de accesibilidad con VoiceOver y texto grande, y enlace público de TestFlight |
+| 7 | | **Validación** con 3–5 personas, idealmente vía Specialisterne y con co-diseño pagado |
+| 8 | | **Pitch:** guion de demo, métricas reales, limitaciones declaradas (tabla del informe) y video de respaldo |
 | ‖ | | **Modelo de audio** (Quique, GPU) sobre niveles por banda → ONNX; se conecta en la iteración 2 |
 
 ### Checklist de la iteración 3
@@ -264,6 +265,93 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 
 ## 9. Decisiones pendientes
 
+- **Revisión en equipo de la propuesta del cuarto isométrico** (sección 10) antes de escribir código.
 - **Correo de contacto** del equipo para el aviso de privacidad (lo exige la LFPDPPP y conviene para Apple).
 - **Contacto en Specialisterne** para las pruebas con usuarios y el co-diseño de la iteración 5.
 - Si el piloto en TestFlight cuenta como investigación con personas, ¿hace falta consentimiento informado y un comité de ética?
+
+## 10. Propuesta en revisión: cuarto isométrico y memoria por lugar
+
+**Estado:** propuesta de Quique, investigada el 26 de octubre. Falta que el equipo la revise; todavía no hay código.
+
+- Investigación: [diseño y evidencia](research/research_notes/Escritorio%20isometrico/diseno.md) y [técnica](research/research_notes/Escritorio%20isometrico/tecnica.md).
+- Prototipo: [`prototipo/iso_proto.py`](research/research_notes/Escritorio%20isometrico/prototipo/).
+- Maqueta: [`docs/brand/room-mockup.png`](brand/room-mockup.png).
+
+### La idea
+
+Cada lugar guardado ("Mi escritorio", "Casa", "Sala de juntas") tiene su propio cuarto isométrico en pixel art. Se toma el género de los cuartos isométricos, no ningún juego en particular; el arte es propio de SpaceEase. Los objetos del cuarto son lo que la persona probó en ese lugar, y cada uno recuerda cómo le fue. La persona decora el cuarto como quiere, y la app usa esa memoria para sugerirle cosas en ese lugar.
+
+### Decisiones tomadas (Quique, 26 oct)
+
+- **Se gana un objeto por cada prueba terminada, sea cual sea el resultado.** No hay puntos por mejorar, ni moneda, tienda o saldo. Premiar "ayudó" sesgaría justo la respuesta que aprende el motor, y también la cifra "ayudó en 5 de 6" que va en la solicitud a la empresa (Dejonckheere 2024; Deci 1999).
+- **Decorar es libre desde el primer día:** colores, piso, plantas y cuadros, con 2 a 4 opciones por decisión.
+- **Alcance:** fases 0 a 4 antes del pitch.
+
+### Reglas que no se negocian (P0 del informe de diseño)
+
+1. **El cuarto es opcional y nunca es la única vista.** Siempre hay una vista simple (lista o la escena 2D actual) con la misma información.
+2. **El objeto se gana por participar, y se avisa antes:** cada prueba terminada deja su objeto, también con "No sé".
+3. **Sin moneda, tienda, saldo ni "te faltan N".**
+4. **Nada aleatorio, escaso ni pagado.** Nada se pierde ni se deteriora: no hay plantas que se mueren ni mascotas que piden atención.
+5. **Sin puntuación del cuarto,** colecciones con huecos, rankings ni "me gusta".
+6. **La persona decide dónde va cada cosa.** Un objeto nuevo aparece en un lugar razonable y la app nunca reacomoda nada.
+7. **Se puede colocar sin arrastrar:** se toca el objeto, luego la casilla destino, o se usan botones. VoiceOver tiene acciones propias (WCAG 2.5.7). La cámara es fija, sin zoom libre.
+
+### Memoria por lugar
+
+**Motor:**
+- Un nivel nuevo, "este lugar, cualquier tarea".
+- Lo reciente pesa más, por si el lugar cambia.
+- Un botón "Este lugar cambió" para empezar de nuevo sin borrar el historial.
+- Un punto de partida según el tipo de lugar (oficina o casa), solo con un mínimo de personas, por privacidad.
+
+**API:**
+- `GET /v1/spaces/{id}/memory`: lo que suele molestar ahí, lo probado con sus resultados y lo que no se puede hacer.
+- Progreso por lugar.
+- Tabla `rooms` con el acomodo (`layout` JSONB, `schema_version` y `revision`, para que dos guardados no se pisen).
+
+**App:**
+- Al tocar un objeto: "Probado 3 veces aquí; ayudó en 2", con el botón **"Usarlo otra vez"**. Abre un registro corto (tarea, molestia y esfuerzo) que salta directo a la prueba.
+- Un corcho "Lo que me sirve aquí" donde la persona fija lo que quiera; la app nunca destaca nada por su cuenta.
+- Un contador por lugar que solo sube, por ejemplo "Aquí: 7 pruebas · 4 cosas que sabes".
+
+### Técnica
+
+- **Skia 2.14.0** (`@shopify/react-native-skia`), la versión que trae Expo Go para SDK 58. La v3 no corre en Expo Go.
+- Skia dibuja el cuarto. Encima van vistas invisibles para tocar y para VoiceOver.
+- La lógica isométrica (proyección, colisiones, orden de dibujo y el formato del acomodo) va en TypeScript puro y se prueba con tests.
+- Los sprites salen de un renderizador de vóxeles en Python con la paleta de la marca, y cada objeto da 4 rotaciones sin redibujarlo.
+- Una sola hoja de sprites de unos 50 KB. Las capas de la escena actual ocupan unos 45 MB de memoria.
+- El cuarto mide 5 × 5 mosaicos de 32 × 16 pixeles, a 2 pt por pixel en cualquier iPhone actual.
+- **Descartados:**
+  - **three.js / 3D real:** no arranca en Expo Go SDK 58 (bug abierto expo/expo#51543).
+  - **Motor de juego en un WebView:** otro motor de JS y accesibilidad mixta.
+
+### Fases
+
+| Fase | Qué | Días-persona |
+|---|---|---|
+| 0 | Prueba de Skia en Expo Go en un iPhone real. Si falla, se usa la alternativa con vistas normales | ½–1 |
+| 1 | Memoria por lugar: motor, API, tarjeta del lugar y "Usarlo otra vez". Sirve aunque el cuarto no llegue | 2–3 |
+| 2 | Cuarto MVP: uno por lugar, con los objetos probados, sus tarjetas y la vista simple | 4–6 |
+| 3 | Decorar: mover, rotar y guardar objetos (primero tocar y tocar, después arrastrar); decoración libre; acomodo en la API | 4–6 |
+| 4 | Pulido: cielo según la hora, movimiento "con detalles" dentro de las reglas de DESIGN §5, sonido y prueba con usuarios | 3–5 |
+
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| **Tiempo:** 14 a 21 días-persona con poco más de una semana | Hacer las fases en orden; cada una deja algo que funciona. Si hace falta, la 4 queda para después del pitch |
+| La versión de Skia de la app se separa de la de Expo Go | Fijar 2.14.0 y correr `npx expo install --check` antes de cada demo por QR |
+| Pixeles borrosos | Muestreo de vecino más cercano explícito, escala entera y posiciones sin medios pixeles |
+| Volumen de arte (40 tipos × variantes × 4 direcciones) | Vóxeles con rotación automática; empezar con los 14 objetos actuales |
+| La gamificación se cuela | Revisar cada pantalla contra las reglas P0 |
+| Reglas de validación repetidas en TypeScript y Rust | Un solo catálogo generado y casos de prueba compartidos |
+
+### Para revisar en equipo
+
+1. ¿Aprueban el modelo "objeto por prueba", sin puntos ni moneda?
+2. ¿Quién afina el arte de los objetos y de la decoración?
+3. Si la fase 0 falla, ¿se sigue con vistas normales o se recorta el cuarto?
+4. ¿Se puede probar con personas de la comunidad de Specialisterne el cuarto frente a la vista simple, revisando que no cambie la proporción de respuestas "ayudó"?
