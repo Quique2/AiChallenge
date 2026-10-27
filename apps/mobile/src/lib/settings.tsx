@@ -2,6 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 /** Preferencias de este teléfono. Los valores por defecto son los de menor estímulo. */
+export type RecapDay = 'off' | 'mon' | 'wed' | 'fri' | 'sun';
+
+/** Día de la semana como lo cuenta iOS (1 = domingo). */
+export const RECAP_WEEKDAY: Record<Exclude<RecapDay, 'off'>, number> = { sun: 1, mon: 2, wed: 4, fri: 6 };
+
 export type Settings = {
   language: 'system' | 'es' | 'en';
   motion: 'system' | 'reduced';
@@ -11,6 +16,10 @@ export type Settings = {
   sounds: boolean;
   soundVolume: 'low' | 'medium';
   haptics: boolean;
+  /** "Tu escritorio" en Hoy. Se puede ocultar; ocultarlo no borra nada. */
+  showDesk: boolean;
+  /** Resumen semanal opcional: el día elegido, a las 10:00. */
+  recapDay: RecapDay;
   softContrast: boolean;
   /** Consentimientos separados para el escaneo; apagados hasta que la persona los active. */
   scanAudio: boolean;
@@ -27,6 +36,8 @@ const DEFAULTS: Settings = {
   sounds: false,
   soundVolume: 'low',
   haptics: false,
+  showDesk: true,
+  recapDay: 'off',
   softContrast: false,
   scanAudio: false,
   scanPhoto: false,

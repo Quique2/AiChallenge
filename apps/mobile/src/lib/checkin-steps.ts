@@ -4,7 +4,6 @@ import { router, type Href } from 'expo-router';
 import { useT } from '@/i18n';
 import { api } from '@/lib/api';
 import { useCheckinDraft } from '@/lib/checkin-draft';
-import { useFeedback } from '@/lib/feedback';
 import { useCatalog, useSpaces } from '@/lib/queries';
 import type { NewCheckin } from '@/lib/types';
 
@@ -16,7 +15,6 @@ const FALLBACK_DOMAINS = ['sound', 'light', 'sight', 'body'];
  */
 export function useCheckinSteps() {
   const t = useT();
-  const feedback = useFeedback();
   const spaces = useSpaces();
   const catalog = useCatalog();
   const askPlace = (spaces.data?.length ?? 0) !== 1;
@@ -36,7 +34,6 @@ export function useCheckinSteps() {
     goAfter: (step: string) => {
       const next = order[order.indexOf(step) + 1];
       if (!next) return false;
-      feedback.step();
       if (domains.includes(next)) router.push({ pathname: '/checkin/[domain]', params: { domain: next } });
       else router.push(`/checkin/${next}` as Href);
       return true;

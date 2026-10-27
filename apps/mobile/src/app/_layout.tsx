@@ -68,18 +68,23 @@ function RootNavigator() {
         <Stack.Screen name="checkin" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="checkout" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="request" options={{ presentation: 'fullScreenModal' }} />
+        {/* Solo se lee (no tiene botones abajo): basta una hoja que se cierra deslizando. */}
+        <Stack.Screen name="recap" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
   );
 }
 
-/** Tocar el aviso "¿cómo te fue?" abre directo la pregunta de ese registro. */
+/** Tocar un aviso abre lo suyo: "¿cómo te fue?" va a la pregunta de ese registro; el resumen, a la semana. */
 function useOpenCheckoutFromNotification(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
     const open = (response: Notifications.NotificationResponse) => {
-      const id = response.notification.request.content.data?.checkinId;
-      if (typeof id === 'string') router.push({ pathname: '/checkout/[id]', params: { id } });
+      const data = response.notification.request.content.data;
+      if (data?.kind === 'recap') router.push('/recap');
+      else if (typeof data?.checkinId === 'string') {
+        router.push({ pathname: '/checkout/[id]', params: { id: data.checkinId } });
+      }
     };
     Notifications.getLastNotificationResponseAsync()
       .then((response) => {

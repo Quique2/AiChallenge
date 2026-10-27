@@ -11,9 +11,9 @@ import { playSound, SOUND_MS, VOLUME, type Sound } from '@/lib/sounds';
  * apagados por defecto. Cuando ambos están encendidos van juntos (guía de Apple), y la
  * vibración nunca es la única señal: siempre hay un cambio visible en pantalla.
  *
- * - `select`: elegir una opción (sonido casi imperceptible; sin vibración, es lo más frecuente).
- * - `step`: pasar a la siguiente pregunta.
- * - `confirm`: aceptar un ajuste o guardar.
+ * Elegir una opción o pasar de pregunta no suena ni vibra: lo frecuente con sonido cansa.
+ *
+ * - `confirm`: aceptar un ajuste (suena cuando la onda del monitor queda tranquila).
  * - `success`: algo ayudó y se suma a "Tu escritorio".
  * - `cue(sound)`: avisos de una pantalla concreta (empieza o termina la escucha, hallazgos, escena).
  */
@@ -34,8 +34,6 @@ export function useFeedback() {
   };
 
   return {
-    select: () => sound('tap'),
-    step: () => sound('step'),
     confirm: () => {
       sound('confirm');
       haptic('success');

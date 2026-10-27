@@ -9,6 +9,7 @@ import { Button } from '@/components/button';
 import { ChoiceList } from '@/components/choice-list';
 import { DeskScene } from '@/components/desk/desk-scene';
 import { Group, GroupRow } from '@/components/group';
+import { Notice } from '@/components/notice';
 import { SegmentedChoice } from '@/components/segmented-choice';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
@@ -17,11 +18,11 @@ import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/i18n';
 import { api, PRIVACY_URL } from '@/lib/api';
 import { useDesk } from '@/lib/desk';
-import { cancelAllReminders } from '@/lib/notifications';
+import { cancelAllReminders, cancelRecap, scheduleRecap } from '@/lib/notifications';
 import { canAnalyzePhoto } from '@/lib/scan';
 import { keys, queryClient, useHealth, useSpaces } from '@/lib/queries';
 import { forgetDeviceKey } from '@/lib/session';
-import { useSettings, type Settings } from '@/lib/settings';
+import { RECAP_WEEKDAY, useSettings, type RecapDay, type Settings } from '@/lib/settings';
 import { playSound, preloadSounds, VOLUME } from '@/lib/sounds';
 
 export default function SettingsScreen() {
@@ -32,6 +33,7 @@ export default function SettingsScreen() {
   const health = useHealth();
   const desk = useDesk();
   const [newPlace, setNewPlace] = useState('');
+  const [recapDenied, setRecapDenied] = useState(false);
 
   const addPlace = useMutation({
     mutationFn: () => api.createSpace(newPlace.trim(), 'other'),
@@ -64,7 +66,7 @@ export default function SettingsScreen() {
   }
 
   const toggle = (
-    key: keyof Pick<Settings, 'details' | 'sounds' | 'haptics' | 'softContrast' | 'scanAudio' | 'scanPhoto'>,
+    key: keyof Pick<Settings, 'details' | 'sounds' | 'haptics' | 'softContrast' | 'showDesk' | 'scanAudio' | 'scanPhoto'>,
     label: string,
     first = false,
     disabled = false,
@@ -94,6 +96,20 @@ export default function SettingsScreen() {
       </View>
     </GroupRow>
   );
+
+  async function chooseRecap(day: RecapDay) {
+    setRecapDenied(false);
+    if (day === 'off') {
+      await cancelRecap();
+      update({ recapDay: 'off' });
+      return;
+    }
+    const scheduled = await scheduleRecap(RECAP_WEEKDAY[day], t.recap.notificationTitle, t.recap.notificationBody).catch(
+      () => false,
+    );
+    if (scheduled) update({ recapDay: day });
+    else setRecapDenied(true);
+  }
 
   function testSound() {
     preloadSounds();
@@ -171,7 +187,26 @@ export default function SettingsScreen() {
         ) : null}
         {toggle('haptics', t.settings.haptics)}
         {toggle('softContrast', t.settings.softContrast)}
+        {toggle('showDesk', t.settings.showDesk, false, false, t.settings.showDeskHint)}
       </Group>
+
+      <View style={styles.block}>
+        <ThemedText type="footnote" themeColor="textSecondary" style={styles.label}>
+          {t.settings.recap}
+        </ThemedText>
+        <ChoiceList
+          options={[
+            { id: 'off', label: t.settings.recapOff },
+            ...(['mon', 'wed', 'fri', 'sun'] as const).map((day) => ({ id: day, label: t.settings.recapDays[day] })),
+          ]}
+          selected={[settings.recapDay]}
+          onSelect={(id) => chooseRecap(id as RecapDay)}
+        />
+        {recapDenied ? <Notice text={t.settings.recapDenied} /> : null}
+        <ThemedText type="footnote" themeColor="textSecondary" style={styles.label}>
+          {t.settings.recapFooter}
+        </ThemedText>
+      </View>
 
       <Group title={t.settings.scanSection} footer={t.settings.scanSectionFooter}>
         {toggle('scanAudio', t.scan.listenConsent, true)}

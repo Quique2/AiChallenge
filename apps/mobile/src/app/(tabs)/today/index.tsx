@@ -23,7 +23,8 @@ export default function Today() {
   const trying = useTrying();
   const playbook = usePlaybook();
   const lastHelped = playbook.data?.[0];
-  const items = deskItems(playbook.data);
+  // Si la persona ocultó su progreso, la escena se queda sin objetos (no se borra nada).
+  const items = settings.showDesk ? deskItems(playbook.data) : [];
 
   function refresh() {
     trying.refetch();
@@ -61,9 +62,11 @@ export default function Today() {
           accessibilityLabel={t.desk.label(items.map((item) => t.desk.items[item]))}
         />
         <View style={styles.caption}>
-          <ThemedText type="footnote" themeColor="textSecondary" style={styles.shrink}>
-            {items.length ? `${t.today.deskTitle} · ${t.today.deskCount(items.length)}` : t.today.deskEmpty}
-          </ThemedText>
+          {settings.showDesk ? (
+            <ThemedText type="footnote" themeColor="textSecondary" style={styles.shrink}>
+              {items.length ? `${t.today.deskTitle} · ${t.today.deskCount(items.length)}` : t.today.deskEmpty}
+            </ThemedText>
+          ) : null}
           {level === 'detailed' ? (
             <ThemedText type="footnote" themeColor="textSecondary" importantForAccessibility="no">
               {t.today.deskTap}
@@ -80,6 +83,7 @@ export default function Today() {
           {t.today.promptBody}
         </ThemedText>
         <Button title={t.today.start} onPress={() => router.push('/checkin/task')} style={styles.cta} />
+        <Button variant="plain" title={t.today.seeWeek} onPress={() => router.push('/recap')} style={styles.cta} />
       </View>
 
       {/* Se ofrece una sola vez y no vuelve a aparecer: la persona elige, sin insistir. */}
@@ -90,7 +94,7 @@ export default function Today() {
             <Button
               variant="secondary"
               title={t.today.experienceYes}
-              onPress={() => update({ details: true, sounds: true, experienceOffered: true })}
+              onPress={() => update({ details: true, experienceOffered: true })}
             />
             <Button variant="plain" title={t.today.experienceNo} onPress={() => update({ experienceOffered: true })} />
           </GroupRow>

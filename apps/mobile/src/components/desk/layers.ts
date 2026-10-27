@@ -16,13 +16,11 @@ export const LAYERS = {
     noisy: require('@/assets/scene/screen-noisy.png'),
     mid: require('@/assets/scene/screen-mid.png'),
     calm: require('@/assets/scene/screen-calm.png'),
-    flat: require('@/assets/scene/screen-flat.png'),
   },
   screenDim: {
     noisy: require('@/assets/scene/screen-dim-noisy.png'),
     mid: require('@/assets/scene/screen-dim-mid.png'),
     calm: require('@/assets/scene/screen-dim-calm.png'),
-    flat: require('@/assets/scene/screen-dim-flat.png'),
   },
   steam: [require('@/assets/scene/steam-0.png'), require('@/assets/scene/steam-1.png')],
   fanAlt: require('@/assets/scene/fan-1.png'),

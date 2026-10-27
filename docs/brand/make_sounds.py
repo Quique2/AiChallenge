@@ -6,8 +6,10 @@ Paleta sonora "Quiet workspace": marimba con fieltro en una escala pentatónica 
 
 - Fundamentales entre 392 y 880 Hz; nada audible por encima de ~4 kHz (filtro paso bajo).
 - Ataque de 6 a 10 ms con curva coseno: sin clics ni transitorios duros.
-- Caída exponencial; ningún sonido pasa de 0.9 s y los frecuentes duran menos de 0.2 s.
-- Picos entre -24 y -15 dBFS en el archivo; la app los baja todavía más con el volumen.
+- Caída exponencial; ningún sonido pasa de 0.9 s.
+- Picos de -27 a -24 dBFS en el archivo (nunca más de -20); la app puede bajarlos más.
+- Solo momentos que la persona provoca o el fin de una espera: nada al navegar ni al elegir
+  una opción (skill `ux-sound` de jal-co: lo frecuente con sonido cansa).
 
 Uso: python make_sounds.py [carpeta]   (por defecto apps/mobile/assets/sounds)
 """
@@ -54,12 +56,6 @@ def blip(f0, f1, dur, glide):
     return tri * envelope(n, 0.006, dur / 3)
 
 
-def soft_noise(dur, cutoff):
-    rng = np.random.default_rng(7)  # determinista
-    n = int(dur * SR)
-    return lowpass(rng.standard_normal(n), cutoff) * envelope(n, 0.002, dur / 4)
-
-
 def lowpass(x, cutoff):
     """Dos polos en cascada (12 dB/oct): quita brillo sin colorear el cuerpo del sonido."""
     a = np.exp(-2 * np.pi * cutoff / SR)
@@ -93,18 +89,10 @@ def finish(x, peak_db, cutoff=3200):
 
 
 SOUNDS = {
-    # Elegir una opción: un toque de madera casi imperceptible.
-    "tap": lambda: finish(
-        sequence([(0, mallet(NOTE["E5"], 0.07, 0.016, attack=0.006, overtone=0.04), 1.0),
-                  (0, soft_noise(0.012, 1400), 0.12)], 0.08),
-        -24,
-    ),
-    # Pasar a la siguiente pregunta.
-    "step": lambda: finish(sequence([(0, mallet(NOTE["A4"], 0.2, 0.06), 1.0)], 0.2), -21),
-    # Aceptar un ajuste o guardar: dos notas que suben (quinta justa).
+    # Aceptar un ajuste: dos notas que suben (quinta justa).
     "confirm": lambda: finish(
         sequence([(0, mallet(NOTE["C5"], 0.3, 0.08), 1.0), (0.08, mallet(NOTE["G5"], 0.3, 0.09), 0.8)], 0.4),
-        -17,
+        -25,
     ),
     # Algo ayudó y llega a tu escritorio: arpegio corto y cálido.
     "success": lambda: finish(
@@ -117,24 +105,24 @@ SOUNDS = {
             ],
             0.9,
         ),
-        -16,
+        -24,
     ),
     # Ya están las posibilidades de la foto y del sonido.
     "reveal": lambda: finish(
         sequence([(0, mallet(NOTE["D5"], 0.3, 0.08), 0.9), (0.07, mallet(NOTE["A5"], 0.35, 0.1), 0.6)], 0.42),
-        -19,
+        -26,
     ),
     # Empieza y termina la escucha: subir para empezar, bajar para terminar.
     "listenStart": lambda: finish(
         sequence([(0, mallet(NOTE["G4"], 0.25, 0.07), 1.0), (0.07, mallet(NOTE["C5"], 0.25, 0.08), 0.8)], 0.3),
-        -19,
+        -25,
     ),
     "listenEnd": lambda: finish(
         sequence([(0, mallet(NOTE["C5"], 0.25, 0.07), 0.8), (0.07, mallet(NOTE["G4"], 0.3, 0.09), 1.0)], 0.34),
-        -19,
+        -25,
     ),
     # Tocar la escena o ver aparecer un objeto: un "blip" de 8 bits, filtrado y bajito.
-    "pixel": lambda: finish(blip(NOTE["C5"], NOTE["G5"], 0.12, 0.04), -23, cutoff=2200),
+    "pixel": lambda: finish(blip(NOTE["C5"], NOTE["G5"], 0.12, 0.04), -27, cutoff=2200),
 }
 
 

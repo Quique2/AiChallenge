@@ -29,7 +29,7 @@ export function useSaveOutcome(id: string) {
     onSuccess: async (result) => {
       await cancelCheckout(id);
       queryClient.setQueryData(outcomeKey(id), result);
-      queryClient.invalidateQueries({ queryKey: keys.trying });
+      queryClient.invalidateQueries({ queryKey: keys.checkins });
       queryClient.invalidateQueries({ queryKey: keys.playbook });
       router.push({ pathname: '/checkout/[id]/result', params: { id } });
     },

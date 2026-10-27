@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { checkEntering } from '@/lib/animations';
-import { useFeedback, useMotionLevel } from '@/lib/feedback';
+import { useMotionLevel } from '@/lib/feedback';
 
 /** Tres o menos opciones cortas en una fila (Sí / No / No sé). Lo elegido lleva ícono y fondo. */
 export function SegmentedChoice({
@@ -22,7 +22,6 @@ export function SegmentedChoice({
   label: string;
 }) {
   const theme = useTheme();
-  const feedback = useFeedback();
   const level = useMotionLevel();
   return (
     <View style={styles.row} accessibilityRole="radiogroup" accessibilityLabel={label}>
@@ -31,10 +30,7 @@ export function SegmentedChoice({
         return (
           <Pressable
             key={option.id}
-            onPress={() => {
-              feedback.select();
-              onSelect(option.id);
-            }}
+            onPress={() => onSelect(option.id)}
             accessibilityRole="radio"
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={option.label}

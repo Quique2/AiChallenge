@@ -4,10 +4,10 @@ import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-aud
  * Sonidos de la interfaz (síntesis en docs/brand/make_sounds.py). Suenan en la categoría
  * `ambient` de iOS: callan con el interruptor de silencio y se mezclan con la música de la
  * persona en lugar de cortarla. Nunca suenan si "Sonidos" está apagado (lo está por defecto).
+ * Son seis, del mismo tono, y solo para lo que la persona provoca o para el fin de una espera:
+ * nada al navegar ni al elegir una opción.
  */
 const SOURCES = {
-  tap: require('@/assets/sounds/tap.wav'),
-  step: require('@/assets/sounds/step.wav'),
   confirm: require('@/assets/sounds/confirm.wav'),
   success: require('@/assets/sounds/success.wav'),
   reveal: require('@/assets/sounds/reveal.wav'),
@@ -20,8 +20,6 @@ export type Sound = keyof typeof SOURCES;
 
 /** Duración de cada sonido, para esperar a que termine antes de grabar. */
 export const SOUND_MS: Record<Sound, number> = {
-  tap: 80,
-  step: 200,
   confirm: 400,
   success: 900,
   reveal: 420,
@@ -30,10 +28,15 @@ export const SOUND_MS: Record<Sound, number> = {
   pixel: 120,
 };
 
-export const VOLUME = { low: 0.45, medium: 0.8 } as const;
+/** Los archivos ya son bajos (picos de -27 a -24 dBFS); "Bajo" los baja unos 3 dB más. */
+export const VOLUME = { low: 0.7, medium: 1 } as const;
+
+/** Dos sonidos casi juntos se oyen como ruido: el segundo se omite. */
+const MIN_GAP_MS = 200;
 
 const players: Partial<Record<Sound, AudioPlayer>> = {};
 let sessionReady = false;
+let lastPlayed = 0;
 
 /** Vuelve a la sesión de audio de la interfaz (por ejemplo, después de grabar). */
 export async function restoreInterfaceAudio() {
@@ -55,6 +58,9 @@ export function preloadSounds() {
 }
 
 export function playSound(sound: Sound, volume: number) {
+  const now = Date.now();
+  if (now - lastPlayed < MIN_GAP_MS) return;
+  lastPlayed = now;
   if (!sessionReady) restoreInterfaceAudio();
   const p = player(sound);
   p.volume = volume;

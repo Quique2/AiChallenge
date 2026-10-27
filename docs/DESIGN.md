@@ -44,17 +44,19 @@ Hay tres niveles de movimiento (`useMotionLevel` en `src/lib/feedback.ts`). La p
 | Nivel | Cuándo | Qué se mueve |
 |---|---|---|
 | **Reducido** | "Reducir movimiento" de iOS (en vivo) o "Siempre reducido" en Ajustes. Gana siempre | Solo fundidos. Nada se repite ni se desplaza. Sin franja de análisis ni columnas de nivel |
-| **Tranquilo** (por defecto) | Sin "Animaciones con detalles" | Movimiento breve y con propósito: barra de pasos, palomita, fundidos, la onda del monitor que se calma |
-| **Con detalles** | "Animaciones con detalles" en Ajustes o en el aviso de Hoy | Además: la escena cobra vida al tocarla, el objeto nuevo "cae" con destellos, los marcadores crecen uno tras otro |
+| **Tranquilo** (por defecto) | Sin "Animaciones con detalles" | Movimiento breve y con propósito: barra de pasos, fundidos, la franja al analizar la foto y la onda del monitor que se calma |
+| **Con detalles** | "Animaciones con detalles" en Ajustes o en el aviso de Hoy | Además: la escena se mueve un rato al aparecer o al tocarla, el objeto nuevo "cae" con cuatro destellos, los marcadores se encienden en orden y la palomita aparece con un fundido |
 
 | Regla | Valor |
 |---|---|
-| Lo frecuente no se anima | Cambiar de pestaña, el teclado, las transiciones de pantalla (son las nativas) |
+| Lo frecuente no se anima | Cambiar de pestaña, el teclado, elegir una opción (en modo tranquilo) y las transiciones de pantalla, que son las nativas |
 | Al tocar | Cambio de opacidad o de fondo inmediato; sin "aplastar" el botón |
 | Curvas | Salida suave (`Easing.bezier(0.23, 1, 0.32, 1)`). Con detalles, `Easing.steps(n)`: las cosas se encienden a saltos, como pixeles. Nunca `ease-in`, rebotes ni elásticos |
+| Entradas | Fundidos. Nada crece desde cero ni se desliza. Los marcadores de la foto, con detalles, se encienden con 40 ms entre uno y otro (menos de 300 ms en total) |
 | Duración | Tranquilo: 250 ms o menos. Con detalles: hasta 450 ms por animación y una sola vez por acción |
-| Animaciones que se repiten | Solo la escena con detalles y la franja mientras se analiza la foto. La escena se detiene sola a los 5 s (WCAG 2.2.2) y vuelve solo si la tocan |
+| Lo que se repite | La franja de la foto da como mucho 3 pasadas (3.6 s) y se queda quieta. La escena, con detalles, se mueve 5 s al aparecer o al tocarla: un solo elemento a la vez (planta, vapor, ventilador), con pausas. Se detiene antes de 5 s (WCAG 2.2.2) y al salir de la pantalla. Nada de oscilaciones continuas (las de ~0.2 Hz marean, según la guía de Apple) |
 | Desplazamiento | Como mucho 2 pixeles de la escena (≈ 10 pt). Nada cruza la pantalla ni hace zoom de pantalla completa (WCAG 2.3.3) |
+| Momento firma | La onda del monitor pasa de ruidosa a tranquila en 3 cuadros (300 ms). El sonido y la vibración llegan en el cuadro en que queda tranquila, nunca antes |
 | Vibración | **Apagada por defecto.** Si se activa, solo al confirmar, una vez por acción y nunca como única señal |
 | Sonido | **Apagado por defecto.** Ver la sección 11 |
 
@@ -62,7 +64,8 @@ Hay tres niveles de movimiento (`useMotionLevel` en `src/lib/feedback.ts`). La p
 
 - Recordatorios solo cuando la persona los pide (25 o 50 minutos, o ninguno). Uno por prueba y como mucho 5 al día. El permiso se pide en ese momento, no al instalar.
 - Nada de rachas, insignias, rankings ni mensajes del tipo "llevas 3 días sin…".
-- El progreso se acumula y nunca baja: "Tu escritorio" (sección 11).
+- El progreso se acumula y nunca baja: "Tu escritorio" (sección 11). Se puede ocultar.
+- **Resumen semanal** (opcional, apagado por defecto): un aviso sin sonido a las 10:00 del día que la persona elige. Trae tres partes, siempre en el mismo orden: lo que probó, lo que ayudó y lo que más le sirve. Lo predecible es el hábito; no hay sorpresas, premios variables ni nada que se desbloquee. Si no hubo pruebas: "Puede que hayas descansado o que no lo hayas anotado. Las dos cosas están bien".
 
 ## 7. Medición
 
@@ -91,6 +94,18 @@ Hay tres niveles de movimiento (`useMotionLevel` en `src/lib/feedback.ts`). La p
 | `expo` (Expo) | `expo-animation`, `expo-design-system`, `expo-native-ui`, router y EAS: qué animar, en qué hilo, con qué curva; las 20 señales de una app genérica | El "presupuesto de deleite" y las celebraciones, los resortes con rebote, el "aplastado" al tocar y la vibración "para deleitar" |
 | `frontend-design` (Anthropic) | Plan de diseño → revisión contra el brief → construir → criticar; lista de señales de diseño hecho por IA | "Tomar riesgos estéticos" y la animación de entrada orquestada: la personalidad va en el pixel art, no en el movimiento |
 
+Para el modo con detalles, los sonidos y la retención se revisaron más skills (informe completo en [`research_notes/Retencion y experiencia opcional/skills.md`](research/research_notes/Retencion%20y%20experiencia%20opcional/skills.md)). Se recomiendan, **revisándolas antes de instalar**:
+
+| Skill | Instalar | Para qué | Qué ignorar en esta app |
+|---|---|---|---|
+| `ux-sound` (jal-co, MIT) + `ui-sound-design` (dannyjpwilliams, MIT) | `npx skills add jal-co/skills --skill ux-sound` y `npx skills add dannyjpwilliams/ui-sound-design-skill` | Si suena, qué y qué tan fuerte; recetas de síntesis | La ruta "generate" con API de pago y los sonidos de navegación o de "procesando" |
+| `motion-design` (LottieFiles, MIT) | `npx skills add LottieFiles/motion-design-skill` | Tablas de duración, escalonado y sobrepaso | "Siempre tres capas de movimiento", la respiración continua de 3–6 s y el "shake" de error |
+| `interaction-design`, `inclusive-interaction` y `cognitive-accessibility` (Owl-Listener, MIT) | `/plugin marketplace add Owl-Listener/designer-skills` | Tiempos de carga, final de las experiencias y sensibilidad al movimiento | La skill `zeigarnik-effect` (presión para terminar) |
+| `ux-copy` (Anthropic, Apache-2.0) | Copiar solo `design/skills/ux-copy/SKILL.md` de `anthropics/knowledge-work-plugins` | Textos de éxito, vacío, error y permisos | El plugin completo de diseño, que suma 9 conectores |
+| `gamification-loops` (omer-metin, Apache-2.0) | Solo como revisión de lo que retiene | Sus "líneas rojas": castigar por no usar, culpa, recompensas variables | Bonos sorpresa y tablas de posiciones |
+
+No se instalan: Rive y `react-native-audio-api` (requieren build propia y rompen el plan B de Expo Go), skills de onboarding con cargas falsas o testimonios "aspiracionales", ni las que sostienen que "si a una persona neurotípica le parece demasiado, está bien para TDAH".
+
 Las reglas de este documento mandan sobre las de cualquier skill.
 
 ## 10. Lo que se evita (señales de una app genérica)
@@ -109,19 +124,22 @@ Fondo crema con tipografía serif de exhibición y acento terracota; una tarjeta
 - La onda del monitor pasa de ruidosa a tranquila al terminar un registro: es la metáfora de la app (el entorno que se calma).
 - VoiceOver lee la escena como una imagen con la lista de objetos.
 
-**El aviso de Hoy** ofrece activar detalles y sonidos una sola vez. Tiene dos respuestas con el mismo peso ("Activar detalles y sonidos" / "Así está bien") y no vuelve a aparecer.
+**El aviso de Hoy** ofrece una sola vez las animaciones con detalles ("Activar animaciones con detalles" / "Así está bien") y no vuelve a aparecer. Los sonidos y la vibración no se encienden con él: cada uno pide su propio interruptor en Ajustes, donde también se pueden probar.
+
+**Progreso** sin presión: el único "premio" es información sobre el entorno ("Lo probaste 3 veces aquí; ayudó en 2") y el objeto de lo que ayudó. Sin puntos, niveles ni frases sobre la persona. Antes de sumar algo que retenga, dos preguntas: ¿se puede dejar sin perder nada? ¿castiga tomarse un descanso? (prueba de la propuesta de Ley de Equidad Digital de la UE).
 
 **Sonidos** (`docs/brand/make_sounds.py`, síntesis propia y determinista):
 
 | Regla | Valor |
 |---|---|
-| Por defecto | Apagados. Se activan en Ajustes o en el aviso de Hoy |
+| Por defecto | Apagados. Se activan en Ajustes, con un botón para probarlos |
+| Cuándo | Solo lo que la persona provoca o el fin de una espera: aceptar un ajuste, "ayudó", empieza y termina la escucha, ya están los hallazgos y tocar la escena. **Nunca** al navegar, elegir una opción, escribir, abrir la app ni en errores |
+| Cuántos | Seis, todos en la misma tonalidad. Entre un sonido y otro pasan al menos 200 ms |
 | Modo silencio | Categoría `ambient` de iOS: callan con el interruptor y se mezclan con la música en lugar de cortarla |
 | Timbre | Marimba con fieltro en pentatónica de Do; el "pixel" es una onda triangular filtrada |
 | Frecuencias | Fundamentales de 392 a 880 Hz; nada audible por encima de ~4 kHz |
 | Envolvente | Ataque de 6 a 10 ms (sin clics), caída exponencial |
-| Duración | Lo frecuente, menos de 0.2 s ("tap", "paso"); lo más largo, 0.9 s (el arpegio del resultado) |
-| Volumen | Picos de -24 a -16 dBFS en el archivo; "Bajo" (por defecto) los baja al 45 % |
-| Frecuencia de uso | Uno por acción. Elegir una opción de una sola respuesta no suena: suena el paso siguiente |
+| Duración | De 0.12 s (el "pixel") a 0.9 s (el arpegio del resultado) |
+| Volumen | Picos de -27 a -24 dBFS en el archivo, nunca más de -20; "Bajo" (por defecto) los baja unos 3 dB |
 | Grabación | El aviso de "empieza a escuchar" termina antes de grabar, para no colarse en el análisis |
 | Vibración | Si está encendida, acompaña al sonido en el mismo momento (guía de Apple) |

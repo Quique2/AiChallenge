@@ -143,11 +143,10 @@ def monitor_frame(layer):
 
 
 WAVES = {
-    # La misma onda del ícono, de ruidosa a plana: el ruido que se calma.
+    # De ruidosa a la onda del ícono (que termina plana): el ruido que se calma.
     "noisy": [13, 11, 14, 12, 15, 12, 14],
     "mid": [14, 12, 14, 13, 14, 13, 14],
     "calm": [14, 13, 12, 13, 14, 14, 14],
-    "flat": [14, 14, 14, 14, 14, 14, 14],
 }
 
 

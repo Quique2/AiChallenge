@@ -6,7 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { checkEntering } from '@/lib/animations';
-import { useFeedback, useMotionLevel } from '@/lib/feedback';
+import { useMotionLevel } from '@/lib/feedback';
 
 export type Option = { id: string; label: string; hint?: string };
 
@@ -20,13 +20,11 @@ type ChoiceListProps = {
 
 /**
  * Lista de opciones en un solo grupo con separadores finos (no una tarjeta por fila).
- * Lo elegido se nota por el fondo y por un ícono: nunca solo por el color. Las casillas suenan
- * al marcarse (si hay sonidos); las de una sola opción no, porque casi siempre llevan a la
- * siguiente pregunta y ahí suena el paso.
+ * Lo elegido se nota por el fondo y por un ícono: nunca solo por el color. Elegir no suena ni
+ * vibra (es lo más frecuente de la app); con detalles, la palomita aparece con un fundido corto.
  */
 export function ChoiceList({ options, selected, onSelect, multiple = false }: ChoiceListProps) {
   const theme = useTheme();
-  const feedback = useFeedback();
   const level = useMotionLevel();
 
   return (
@@ -40,10 +38,7 @@ export function ChoiceList({ options, selected, onSelect, multiple = false }: Ch
         return (
           <Pressable
             key={option.id}
-            onPress={() => {
-              if (multiple) feedback.select();
-              onSelect(option.id);
-            }}
+            onPress={() => onSelect(option.id)}
             accessibilityRole={multiple ? 'checkbox' : 'radio'}
             accessibilityState={multiple ? { checked: isSelected } : { selected: isSelected }}
             accessibilityHint={option.hint}

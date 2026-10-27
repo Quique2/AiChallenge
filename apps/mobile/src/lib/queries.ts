@@ -12,7 +12,9 @@ export const queryClient = new QueryClient({
 export const keys = {
   catalog: (locale: string) => ['catalog', locale] as const,
   spaces: ['spaces'] as const,
+  checkins: ['checkins'] as const,
   trying: ['checkins', 'trying'] as const,
+  done: ['checkins', 'done'] as const,
   checkin: (id: string) => ['checkin', id] as const,
   playbook: ['playbook'] as const,
   health: ['health'] as const,
@@ -46,6 +48,11 @@ export function useSpaces() {
 
 export function useTrying() {
   return useQuery({ queryKey: keys.trying, queryFn: () => api.checkins('trying') });
+}
+
+/** Los últimos registros terminados (hasta 30), para el resumen de la semana. */
+export function useDone() {
+  return useQuery({ queryKey: keys.done, queryFn: () => api.checkins('done') });
 }
 
 export function useCheckin(id: string) {

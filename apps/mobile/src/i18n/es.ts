@@ -5,6 +5,9 @@
  */
 
 const times = (n: number) => (n === 1 ? 'vez' : 'veces');
+/** "A", "A y B", "A, B y C". */
+const list = (items: string[]) =>
+  items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
 
 const es = {
   common: {
@@ -58,11 +61,30 @@ const es = {
     deskEmpty: 'Cuando un ajuste te ayude, aparecerá aquí como un objeto nuevo.',
     deskCount: (n: number) => `${n} ${n === 1 ? 'cosa que te sirve' : 'cosas que te sirven'}`,
     deskTap: 'Toca la escena para darle vida.',
+    seeWeek: 'Ver mi semana',
     experienceTitle: '¿Le damos más vida a la app?',
     experienceBody:
-      'Puedes activar animaciones con detalles y sonidos suaves. Se apagan cuando quieras en Ajustes, y el sonido calla con el modo silencio.',
-    experienceYes: 'Activar detalles y sonidos',
+      'Con animaciones con detalles, tu escritorio cobra vida y lo que te ayuda se celebra. Los sonidos suaves y la vibración se activan aparte, en Ajustes.',
+    experienceYes: 'Activar animaciones con detalles',
     experienceNo: 'Así está bien',
+  },
+  recap: {
+    title: 'Tu semana',
+    hint: 'Los últimos 7 días, siempre en el mismo orden.',
+    notificationTitle: 'Tu semana en SpaceEase',
+    notificationBody: 'Tres cosas sobre tu espacio, para cuando quieras verlas.',
+    triedLabel: 'Lo que probaste',
+    tried: (n: number) => `Probaste ${n} ${n === 1 ? 'ajuste' : 'ajustes'} en los últimos 7 días.`,
+    triedNone:
+      'Esta semana no hubo pruebas. Puede que hayas descansado o que no lo hayas anotado. Las dos cosas están bien.',
+    helpedLabel: 'Lo que ayudó',
+    helped: (titles: string[]) => `Te ayudó: ${list(titles.map((t) => t.toLowerCase()))}.`,
+    helpedNone: 'Esta semana no hubo algo claro. Eso también es información.',
+    helpedNoTrials: 'Cuando pruebes algo, aquí verás si ayudó.',
+    bestLabel: 'Lo que más te sirve',
+    best: (title: string, helped: number, trials: number) => `${title}: ayudó ${helped} de ${trials} ${times(trials)}.`,
+    bestNone: 'Todavía no hay algo que se repita. Con cada prueba se aclara.',
+    footer: 'Puedes volver cuando quieras.',
   },
   desk: {
     label: (names: string[]) => (names.length ? `Tu escritorio: ${names.join(', ')}.` : 'Tu escritorio, todavía sin objetos.'),
@@ -278,6 +300,14 @@ const es = {
     volumeMedium: 'Medio',
     testSound: 'Probar sonido',
     previewHint: 'Toca la escena para ver cómo se mueve.',
+    showDesk: 'Mostrar Tu escritorio en Hoy',
+    showDeskHint: 'Los objetos de lo que te ayudó. Si lo ocultas, no se pierde nada.',
+    recap: 'Resumen semanal',
+    recapFooter: 'Un aviso sin sonido a las 10:00 del día que elijas, con tres cosas, siempre en el mismo orden.',
+    recapOff: 'No, gracias',
+    recapDays: { mon: 'Los lunes', wed: 'Los miércoles', fri: 'Los viernes', sun: 'Los domingos' },
+    recapDenied:
+      'Sin permiso de avisos no podemos mandarlo. Puedes activarlo en Configuración → SpaceEase → Notificaciones.',
     scanSection: 'Foto y sonido',
     scanSectionFooter: 'Puedes cambiar esto cuando quieras. Lo que ya se analizó no se guardó.',
     places: 'Mis lugares',

@@ -1,10 +1,14 @@
 import * as Notifications from 'expo-notifications';
 
 /**
- * Un solo aviso "¿cómo te fue?" por prueba, sin sonido, solo si la persona eligió que le avisemos
- * (COGA: recordatorios solo a petición). El permiso se pide en ese momento, no al instalar.
+ * Avisos locales, sin sonido y solo cuando la persona los pide (COGA: recordatorios a petición).
+ * El permiso se pide en ese momento, no al instalar.
+ * - "¿Cómo te fue?": uno por prueba, como mucho 5 pendientes.
+ * - Resumen semanal: opcional, el día que la persona elija, a las 10:00.
  */
-const MAX_PER_DAY = 5;
+const MAX_CHECKOUTS = 5;
+const RECAP_ID = 'weekly-recap';
+const RECAP_HOUR = 10;
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -15,17 +19,21 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export async function scheduleCheckout(checkinId: string, minutes: number, title: string, body: string) {
+async function ensurePermission() {
   const permission = await Notifications.getPermissionsAsync();
-  const granted =
+  return (
     permission.granted ||
     (permission.canAskAgain &&
       (await Notifications.requestPermissionsAsync({ ios: { allowAlert: true, allowSound: false, allowBadge: false } }))
-        .granted);
-  if (!granted) return false;
+        .granted)
+  );
+}
+
+export async function scheduleCheckout(checkinId: string, minutes: number, title: string, body: string) {
+  if (!(await ensurePermission())) return false;
 
   const pending = await Notifications.getAllScheduledNotificationsAsync();
-  if (pending.length >= MAX_PER_DAY) return false;
+  if (pending.filter((n) => n.identifier.startsWith('checkout-')).length >= MAX_CHECKOUTS) return false;
 
   await Notifications.scheduleNotificationAsync({
     identifier: `checkout-${checkinId}`,
@@ -38,6 +46,22 @@ export async function scheduleCheckout(checkinId: string, minutes: number, title
 /** Al contestar antes de tiempo, el aviso ya no hace falta. */
 export async function cancelCheckout(checkinId: string) {
   await Notifications.cancelScheduledNotificationAsync(`checkout-${checkinId}`).catch(() => {});
+}
+
+/** `weekday` como lo cuenta iOS: 1 = domingo, 2 = lunes… 7 = sábado. */
+export async function scheduleRecap(weekday: number, title: string, body: string) {
+  if (!(await ensurePermission())) return false;
+  await cancelRecap();
+  await Notifications.scheduleNotificationAsync({
+    identifier: RECAP_ID,
+    content: { title, body, sound: false, data: { kind: 'recap' } },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday, hour: RECAP_HOUR, minute: 0 },
+  });
+  return true;
+}
+
+export async function cancelRecap() {
+  await Notifications.cancelScheduledNotificationAsync(RECAP_ID).catch(() => {});
 }
 
 export async function cancelAllReminders() {

@@ -1,6 +1,9 @@
 import type { Strings } from './es';
 
 const times = (n: number) => (n === 1 ? 'time' : 'times');
+/** "A", "A and B", "A, B and C". */
+const list = (items: string[]) =>
+  items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 
 const en: Strings = {
   common: {
@@ -53,11 +56,29 @@ const en: Strings = {
     deskEmpty: 'When an adjustment helps you, it will show up here as a new object.',
     deskCount: (n: number) => `${n} ${n === 1 ? 'thing that works for you' : 'things that work for you'}`,
     deskTap: 'Tap the scene to bring it to life.',
+    seeWeek: 'See my week',
     experienceTitle: 'Shall we bring the app to life?',
     experienceBody:
-      'You can turn on detailed animations and soft sounds. Turn them off anytime in Settings, and sound stays quiet in silent mode.',
-    experienceYes: 'Turn on details and sounds',
+      'With detailed animations, your desk comes to life and what helps you gets celebrated. Soft sounds and vibration are turned on separately, in Settings.',
+    experienceYes: 'Turn on detailed animations',
     experienceNo: "It's fine as it is",
+  },
+  recap: {
+    title: 'Your week',
+    hint: 'The last 7 days, always in the same order.',
+    notificationTitle: 'Your week in SpaceEase',
+    notificationBody: 'Three things about your space, for whenever you want to look.',
+    triedLabel: 'What you tried',
+    tried: (n: number) => `You tried ${n} ${n === 1 ? 'adjustment' : 'adjustments'} in the last 7 days.`,
+    triedNone: "There were no trials this week. Maybe you rested, or didn't note it down. Both are fine.",
+    helpedLabel: 'What helped',
+    helped: (titles: string[]) => `What helped: ${list(titles.map((t) => t.toLowerCase()))}.`,
+    helpedNone: "Nothing was clear this week. That's useful information too.",
+    helpedNoTrials: "When you try something, you'll see here whether it helped.",
+    bestLabel: 'What works best for you',
+    best: (title: string, helped: number, trials: number) => `${title}: helped ${helped} of ${trials} ${times(trials)}.`,
+    bestNone: "Nothing repeats yet. Each trial makes it clearer.",
+    footer: 'Come back whenever you like.',
   },
   desk: {
     label: (names: string[]) => (names.length ? `Your desk: ${names.join(', ')}.` : 'Your desk, with no objects yet.'),
@@ -263,6 +284,13 @@ const en: Strings = {
     volumeMedium: 'Medium',
     testSound: 'Play a sound',
     previewHint: 'Tap the scene to see how it moves.',
+    showDesk: 'Show Your desk on Today',
+    showDeskHint: "The objects for what helped you. Hiding it doesn't delete anything.",
+    recap: 'Weekly recap',
+    recapFooter: 'A silent reminder at 10:00 on the day you choose, with three things, always in the same order.',
+    recapOff: 'No, thanks',
+    recapDays: { mon: 'Mondays', wed: 'Wednesdays', fri: 'Fridays', sun: 'Sundays' },
+    recapDenied: "Without notification access we can't send it. You can turn it on in Settings → SpaceEase → Notifications.",
     scanSection: 'Photo and sound',
     scanSectionFooter: 'You can change this anytime. Nothing already analysed was stored.',
     places: 'My places',

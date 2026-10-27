@@ -5,13 +5,13 @@ import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/button';
-import { DeskScene } from '@/components/desk/desk-scene';
+import { DeskScene, SETTLED_MS } from '@/components/desk/desk-scene';
 import { StepScreen } from '@/components/step-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/i18n';
-import { contentEntering, revealEntering } from '@/lib/animations';
+import { contentEntering } from '@/lib/animations';
 import { outcomeKey, type SavedOutcome } from '@/lib/checkout';
 import { useDesk } from '@/lib/desk';
 import { useFeedback, useMotionLevel } from '@/lib/feedback';
@@ -33,10 +33,14 @@ export default function CheckoutResult() {
   const data = queryClient.getQueryData<SavedOutcome>(outcomeKey(id));
   const helped = data?.checkin.outcome === 'helped' && data.checkin.adjustment?.kind !== 'baseline';
 
-  // Un solo sonido al llegar: el arpegio si ayudó, el de confirmar si no.
+  // Un solo sonido al llegar. Si ayudó, el arpegio suena cuando la onda queda tranquila.
   useEffect(() => {
-    if (helped) feedback.success();
-    else feedback.confirm();
+    if (!helped) {
+      feedback.confirm();
+      return;
+    }
+    const timer = setTimeout(feedback.success, SETTLED_MS);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al llegar a la pantalla
   }, []);
 
@@ -87,7 +91,7 @@ export default function CheckoutResult() {
       <View style={styles.desk}>
         {newItem ? (
           <Animated.View
-            entering={revealEntering(level, 5)}
+            entering={contentEntering(level)}
             style={[styles.chip, { backgroundColor: theme.backgroundSelected }]}
             accessible
             accessibilityLabel={`${t.desk.newItem}: ${t.desk.items[newItem]}`}>

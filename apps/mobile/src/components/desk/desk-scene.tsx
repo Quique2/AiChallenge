@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   Easing,
@@ -16,9 +17,16 @@ import { useFeedback, useMotionLevel } from '@/lib/feedback';
 
 /** La escena se mueve como mucho 5 s seguidos (WCAG 2.2.2) y luego descansa hasta que la toquen. */
 const ALIVE_MS = 5000;
-const TICK_MS = 400;
+const TICK_MS = 300;
+/**
+ * Qué se mueve en cada cuadro de esos 5 s: un solo elemento a la vez, con pausas largas entre
+ * uno y otro. No hay oscilaciones continuas (las de ~0.2 Hz marean; guía de Apple).
+ */
+const TWITCHES: Record<number, 'sway' | 'steam' | 'fan'> = { 2: 'sway', 6: 'steam', 7: 'steam', 11: 'fan', 13: 'fan' };
 const SETTLE: Wave[] = ['noisy', 'mid', 'calm'];
 const SETTLE_FRAME_MS = 150;
+/** Cuándo queda tranquila la onda: ahí suenan los sonidos y la vibración del momento. */
+export const SETTLED_MS = SETTLE_FRAME_MS * (SETTLE.length - 1);
 
 /** Objetos que se dibujan como capa propia (la persiana va bajo la pared y la pantalla tenue es una paleta). */
 const LAYERED = (Object.keys(ITEMS) as ItemId[]).filter((id) => id !== 'blinds' && id !== 'screenDim');
@@ -45,7 +53,8 @@ type DeskSceneProps = {
 /**
  * "Tu escritorio" en pixel art (capas de docs/brand/draw_scene.py). El cielo sigue la hora del
  * teléfono. Con movimiento reducido todo queda quieto; en modo tranquilo solo se calma la onda;
- * con detalles, además, sale vapor de la taza, gira el ventilador y la planta se mece.
+ * con detalles, además, la planta se mece, sale vapor de la taza y el ventilador gira, uno a la
+ * vez y con pausas.
  */
 export function DeskScene({ items, highlight, settle, interactive, accessibilityLabel, style }: DeskSceneProps) {
   const level = useMotionLevel();
@@ -80,20 +89,27 @@ export function DeskScene({ items, highlight, settle, interactive, accessibility
     };
   }, [alive, wakes, level]);
 
+  // Fuera de pantalla (otra pestaña, otra pantalla encima), la escena se queda quieta.
+  useFocusEffect(useCallback(() => () => setAlive(false), []));
+
   function wake() {
     feedback.cue('pixel');
     if (level === 'reduced') return;
     setWave('noisy');
     setWakes((w) => w + 1);
-    if (level === 'detailed') setAlive(true);
+    if (level === 'detailed') {
+      setTick(0);
+      setAlive(true);
+    }
   }
 
   // Si "Reducir movimiento" llega cuando la onda ya empezó, se muestra quieta y tranquila.
   const shownWave = level === 'reduced' ? 'calm' : wave;
   const moving = alive && level === 'detailed';
-  const steamFrame = moving ? Math.floor(tick / 2) % 2 : 0;
-  const fanFrame = moving ? tick % 2 : 0;
-  const sway = moving && tick % 8 === 4;
+  const twitch = moving ? TWITCHES[tick % Math.round(ALIVE_MS / TICK_MS)] : undefined;
+  const steamFrame = twitch === 'steam' ? 1 : 0;
+  const fanFrame = twitch === 'fan' ? 1 : 0;
+  const sway = twitch === 'sway';
   const unit = width / SCENE.width;
 
   const content = (
