@@ -10,20 +10,20 @@ import type { OutcomeResult, Response } from '@/lib/types';
 
 export const outcomeKey = (id: string) => ['outcome', id] as const;
 
-/** El resultado y, si este ajuste ayudó por primera vez, el objeto que llega a "Tu escritorio". */
+/** El resultado y, si es la primera vez que se prueba algo de ese tema, el objeto que llega a "Tu escritorio". */
 export type SavedOutcome = OutcomeResult & { newItem?: ItemId };
 
 /** Guarda "cómo te fue", quita el aviso pendiente y muestra el resultado. */
 export function useSaveOutcome(id: string) {
   return useMutation({
     mutationFn: async (answers: { discomfort: number; effort: number; attribution: Response }): Promise<SavedOutcome> => {
-      // Lo que había en el escritorio antes, para saber si el objeto es nuevo.
+      // Lo que había en el escritorio antes, para saber si el objeto es nuevo. No importa si ayudó.
       const before = await queryClient
-        .ensureQueryData({ queryKey: keys.playbook, queryFn: api.playbook })
+        .ensureQueryData({ queryKey: keys.progress, queryFn: api.progress })
         .catch(() => undefined);
       const result = await api.outcome(id, answers);
       const item = result.checkin.adjustment ? ITEM_FOR_ADJUSTMENT[result.checkin.adjustment.id] : undefined;
-      const isNew = result.checkin.outcome === 'helped' && item && before && !deskItems(before).includes(item);
+      const isNew = item && before && !deskItems(before.tried).includes(item);
       return { ...result, newItem: isNew ? item : undefined };
     },
     onSuccess: async (result) => {
@@ -31,6 +31,7 @@ export function useSaveOutcome(id: string) {
       queryClient.setQueryData(outcomeKey(id), result);
       queryClient.invalidateQueries({ queryKey: keys.checkins });
       queryClient.invalidateQueries({ queryKey: keys.playbook });
+      queryClient.invalidateQueries({ queryKey: keys.progress });
       router.push({ pathname: '/checkout/[id]/result', params: { id } });
     },
   });

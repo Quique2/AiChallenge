@@ -105,7 +105,6 @@ export default function Listen() {
     setPhase('processing');
     await recorder.stop();
     await restoreInterfaceAudio();
-    feedback.cue('listenEnd');
     const hints = recorder.uri ? await analyzeRecording(recorder.uri).catch(() => []) : [];
     next(hints);
   }

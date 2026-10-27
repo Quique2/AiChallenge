@@ -22,7 +22,7 @@ import { cancelAllReminders, cancelRecap, scheduleRecap } from '@/lib/notificati
 import { canAnalyzePhoto } from '@/lib/scan';
 import { keys, queryClient, useHealth, useSpaces } from '@/lib/queries';
 import { forgetDeviceKey } from '@/lib/session';
-import { RECAP_WEEKDAY, useSettings, type RecapDay, type Settings } from '@/lib/settings';
+import { RECAP_HOURS, RECAP_WEEKDAY, useSettings, type RecapDay, type RecapHour, type Settings } from '@/lib/settings';
 import { playSound, preloadSounds, VOLUME } from '@/lib/sounds';
 
 export default function SettingsScreen() {
@@ -97,23 +97,26 @@ export default function SettingsScreen() {
     </GroupRow>
   );
 
-  async function chooseRecap(day: RecapDay) {
+  async function chooseRecap(day: RecapDay, hour: RecapHour = settings.recapHour) {
     setRecapDenied(false);
     if (day === 'off') {
       await cancelRecap();
       update({ recapDay: 'off' });
       return;
     }
-    const scheduled = await scheduleRecap(RECAP_WEEKDAY[day], t.recap.notificationTitle, t.recap.notificationBody).catch(
-      () => false,
-    );
-    if (scheduled) update({ recapDay: day });
+    const scheduled = await scheduleRecap(
+      RECAP_WEEKDAY[day],
+      hour,
+      t.recap.notificationTitle,
+      t.recap.notificationBody,
+    ).catch(() => false);
+    if (scheduled) update({ recapDay: day, recapHour: hour, recapSeenAt: Date.now(), recapOffered: true });
     else setRecapDenied(true);
   }
 
   function testSound() {
     preloadSounds();
-    playSound('success', VOLUME[settings.soundVolume]);
+    playSound('result', VOLUME[settings.soundVolume]);
   }
 
   return (
@@ -202,6 +205,14 @@ export default function SettingsScreen() {
           selected={[settings.recapDay]}
           onSelect={(id) => chooseRecap(id as RecapDay)}
         />
+        {settings.recapDay !== 'off' ? (
+          <SegmentedChoice
+            label={t.settings.recapTime}
+            options={RECAP_HOURS.map((hour) => ({ id: String(hour), label: `${hour}:00` }))}
+            selected={String(settings.recapHour)}
+            onSelect={(id) => chooseRecap(settings.recapDay, Number(id) as RecapHour)}
+          />
+        ) : null}
         {recapDenied ? <Notice text={t.settings.recapDenied} /> : null}
         <ThemedText type="footnote" themeColor="textSecondary" style={styles.label}>
           {t.settings.recapFooter}

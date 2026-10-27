@@ -58,8 +58,8 @@ const es = {
     tellMe: 'Contar cómo me fue',
     lastHelped: 'Lo último que te ayudó',
     deskTitle: 'Tu escritorio',
-    deskEmpty: 'Cuando un ajuste te ayude, aparecerá aquí como un objeto nuevo.',
-    deskCount: (n: number) => `${n} ${n === 1 ? 'cosa que te sirve' : 'cosas que te sirven'}`,
+    deskEmpty: 'Cada prueba que termines deja aquí un objeto, haya ayudado o no.',
+    deskCount: (n: number) => `${n} ${n === 1 ? 'prueba terminada' : 'pruebas terminadas'}`,
     deskTap: 'Toca la escena para darle vida.',
     seeWeek: 'Ver mi semana',
     experienceTitle: '¿Le damos más vida a la app?',
@@ -67,6 +67,10 @@ const es = {
       'Con animaciones con detalles, tu escritorio cobra vida y lo que te ayuda se celebra. Los sonidos suaves y la vibración se activan aparte, en Ajustes.',
     experienceYes: 'Activar animaciones con detalles',
     experienceNo: 'Así está bien',
+    recapStillTitle: '¿Sigues queriendo el resumen semanal?',
+    recapStillBody: 'Hace unas semanas que no lo abres. Está bien de las dos formas.',
+    recapKeep: 'Sí, seguir',
+    recapStop: 'Ya no, gracias',
   },
   recap: {
     title: 'Tu semana',
@@ -89,7 +93,8 @@ const es = {
   desk: {
     label: (names: string[]) => (names.length ? `Tu escritorio: ${names.join(', ')}.` : 'Tu escritorio, todavía sin objetos.'),
     newItem: 'Nuevo en tu escritorio',
-    ifHelps: 'Si te ayuda, aparecerá en tu escritorio.',
+    afterTrial: 'Cuando nos cuentes cómo te fue, se suma a tu escritorio, haya ayudado o no.',
+    learned: 'Ya sabes algo más de este espacio.',
     items: {
       headphones: 'Audífonos',
       speaker: 'Bocina de sonido suave',
@@ -201,8 +206,11 @@ const es = {
     in25: 'En 25 minutos',
     in50: 'En 50 minutos',
     myself: 'Yo vuelvo cuando termine',
+    // Lo que se ve con el teléfono bloqueado no dice qué ajuste ni qué molesta.
     notificationTitle: '¿Cómo te fue?',
-    notificationBody: (adjustment: string) => `Cuéntanos cómo te fue con “${adjustment}”.`,
+    notificationBody: 'Cuando quieras, cuéntanos cómo te fue con la prueba.',
+    plan: (task: string, adjustment: string) =>
+      `Tu plan: la próxima vez que toque «${task}» aquí, ${adjustment.toLowerCase()}.`,
     doneTitle: 'Listo',
     doneBody: 'Trabaja a tu ritmo. Cuando termines, cuéntanos cómo te fue desde Hoy.',
   },
@@ -231,6 +239,10 @@ const es = {
     unclearBetterBody: 'Mejoró, pero no más de lo habitual para ti. Si lo vuelves a probar, lo sabremos mejor.',
     comparisonBody:
       'Saber cómo cambia tu día sin ajustes nos ayuda a juzgar mejor los que pruebes después.',
+    recapOfferTitle: '¿Quieres un resumen cada semana?',
+    recapOfferBody: 'Tres cosas sobre tu espacio, el día y a la hora que elijas. Sin sonido.',
+    recapOfferYes: 'Elegir día y hora',
+    recapOfferNo: 'No, gracias',
   },
   playbook: {
     emptyTitle: 'Aquí aparecerá lo que te funcione',
@@ -303,7 +315,8 @@ const es = {
     showDesk: 'Mostrar Tu escritorio en Hoy',
     showDeskHint: 'Los objetos de lo que te ayudó. Si lo ocultas, no se pierde nada.',
     recap: 'Resumen semanal',
-    recapFooter: 'Un aviso sin sonido a las 10:00 del día que elijas, con tres cosas, siempre en el mismo orden.',
+    recapFooter: 'Un aviso sin sonido el día y a la hora que elijas, con tres cosas, siempre en el mismo orden.',
+    recapTime: 'Hora',
     recapOff: 'No, gracias',
     recapDays: { mon: 'Los lunes', wed: 'Los miércoles', fri: 'Los viernes', sun: 'Los domingos' },
     recapDenied:

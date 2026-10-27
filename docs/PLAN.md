@@ -150,6 +150,7 @@ El lenguaje del backend no es lo que hará sentir lenta la app; lo es la llamada
 | `POST /v1/checkins/{id}/outcome` | Molestia, esfuerzo y "¿ayudó?" → resultado relativo |
 | `POST /v1/checkins/{id}/abandon`, `GET /v1/checkins[?status=]`, `GET /v1/checkins/{id}` | Dejarlo e historial |
 | `GET /v1/playbook` | Lo que me sirve, por tarea × lugar × estímulo |
+| `GET /v1/progress` | Pruebas terminadas y ajustes ya probados, sea cual sea el resultado ("Tu escritorio") |
 | `POST /v1/scan/photo` | JPEG ya pixelado + tarea + pistas del audio → hasta 3 hipótesis con punto y pregunta (503 sin llave, 429 al pasar el límite diario) |
 | `GET /privacy` | Aviso de privacidad (es/en) |
 | `GET /health` | Salud del servicio, versión y commit |
@@ -199,11 +200,26 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 | 0 | ✅ 26 oct | Monorepo, API Rust + Postgres en Railway, app en TestFlight (1.0.0) y sync a los espejos |
 | 1 | ✅ 26 oct | **Ciclo completo sin IA (FMVP)** con la investigación aplicada: registrar, descubrir, sugerencia con motivo, comparación, recordatorio, resultado relativo, Lo que me sirve, solicitud a la empresa, es/en y accesibilidad. App 1.1.0 + API 0.2.0 |
 | 2 | ✅ 26 oct | **Escaneo con foto y sonido:** consentimientos aparte, audio en el teléfono, foto pixelada en el teléfono y Claude Opus 5.5 con hipótesis que la persona confirma. App 1.2.0 + API 0.3.0 |
-| 3 | | Redacción con Claude Haiku 5.5 (solicitud y tarjetas), "¿qué puede pedirte tu empresa?" por país y tarjetas de aprendizaje |
-| 4 | | Usuario demo con historial sembrado, revisión de accesibilidad con VoiceOver y texto grande, y enlace público de TestFlight |
-| 5 | | **Validación** con 3–5 personas, idealmente vía Specialisterne y con co-diseño pagado |
-| 6 | | **Pitch:** guion de demo, métricas reales, limitaciones declaradas (tabla del informe) y video de respaldo |
+| 3 | ✅ 26 oct | **Experiencia y retención sin presión:** arreglos del permiso del micrófono y de los botones fuera de la pantalla; "Tu escritorio" (un objeto por cada prueba terminada, haya ayudado o no, que nunca se pierde); tres niveles de movimiento; sonidos suaves opcionales; resumen semanal opcional; plan "si…, entonces…". App 1.3.0 + API 0.4.0 |
+| 4 | | Redacción con Claude Haiku 5.5 (solicitud y tarjetas), "¿qué puede pedirte tu empresa?" por país y tarjetas de aprendizaje |
+| 5 | | Usuario demo con historial sembrado, revisión de accesibilidad con VoiceOver y texto grande, y enlace público de TestFlight |
+| 6 | | **Validación** con 3–5 personas, idealmente vía Specialisterne y con co-diseño pagado |
+| 7 | | **Pitch:** guion de demo, métricas reales, limitaciones declaradas (tabla del informe) y video de respaldo |
 | ‖ | | **Modelo de audio** (Quique, GPU) sobre niveles por banda → ONNX; se conecta en la iteración 2 |
+
+### Checklist de la iteración 3
+
+- [x] Micrófono: el plugin de la cámara borraba `NSMicrophoneUsageDescription`; ahora iOS pregunta y, si ya no puede, la app ofrece "Abrir Configuración"
+- [x] Botones siempre visibles: flujos a pantalla completa, pie fijo con márgenes seguros y cámara de medio alto como mucho
+- [x] "Tu escritorio": escena por capas (`docs/brand/draw_scene.py`), 14 objetos, cielo según la hora y onda que se calma
+- [x] Movimiento en tres niveles, barra de pasos en pixeles, medidor al escuchar y franja al analizar la foto
+- [x] Sonidos propios (`docs/brand/make_sounds.py`): cinco, apagados por defecto, categoría `ambient` de iOS, con límites acústicos que el script verifica
+- [x] Resumen semanal opcional y "Mostrar Tu escritorio en Hoy"
+- [x] Investigación de retención ética y revisión de skills de sonido, movimiento y retención
+- [x] Se premia la prueba, no el resultado: el escritorio y el tono final no dependen de si "ayudó" (`GET /v1/progress`)
+- [x] Avisos sin datos sensibles en la pantalla bloqueada; resumen con día y hora; pregunta tras 5 semanas sin abrirlo
+- [ ] Probar la build 1.3.0 en un iPhone: permiso del micrófono, pie de los pasos con texto grande, sonidos con el interruptor de silencio
+- [ ] Escuchar los sonidos en el teléfono y ajustar volumen o timbre si hace falta
 
 ### Checklist de la iteración 2
 

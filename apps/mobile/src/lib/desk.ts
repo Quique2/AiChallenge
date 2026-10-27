@@ -1,11 +1,13 @@
 import { ITEMS, type ItemId } from '@/components/desk/layers';
-import { usePlaybook } from '@/lib/queries';
-import type { PlaybookEntry } from '@/lib/types';
+import { useProgress } from '@/lib/queries';
 
 /**
- * "Tu escritorio": cada ajuste que te ayudó deja un objeto en la escena. Es progreso que se
- * acumula y nunca se pierde (no hay rachas ni nada que caduque). Los ajustes "para pedir a tu
- * empresa" no se prueban aquí, pero comparten el objeto de su tema por si algún día cuentan.
+ * "Tu escritorio": cada ajuste que pruebas hasta el final deja un objeto en la escena, **haya
+ * ayudado o no**. Si solo ganara objeto lo que ayudó, la app estaría premiando una respuesta y
+ * empujaría a contestar "ayudó", que es justo el dato que aprende el motor (notas de
+ * investigación de retención, regla 1). Es progreso que se acumula y nunca se pierde: no hay
+ * rachas ni nada que caduque. Los ajustes "para pedir a tu empresa" no se prueban aquí, pero
+ * comparten el objeto de su tema.
  */
 export const ITEM_FOR_ADJUSTMENT: Record<string, ItemId> = {
   noise_cancelling: 'headphones',
@@ -42,16 +44,17 @@ export const ITEM_FOR_ADJUSTMENT: Record<string, ItemId> = {
 /** Orden fijo para leerlos con VoiceOver: de izquierda a derecha en la escena. */
 const ORDER = (Object.keys(ITEMS) as ItemId[]).sort((a, b) => ITEMS[a].box[0] - ITEMS[b].box[0]);
 
-export function deskItems(playbook: PlaybookEntry[] | undefined): ItemId[] {
-  const owned = new Set<ItemId>();
-  for (const entry of playbook ?? []) {
-    const item = ITEM_FOR_ADJUSTMENT[entry.adjustment.id];
-    if (item && entry.helped > 0) owned.add(item);
-  }
+/** Objetos de los ajustes ya probados (ids de `GET /v1/progress`). */
+export function deskItems(tried: string[] | undefined): ItemId[] {
+  const owned = new Set((tried ?? []).map((id) => ITEM_FOR_ADJUSTMENT[id]).filter(Boolean));
   return ORDER.filter((item) => owned.has(item));
 }
 
 export function useDesk() {
-  const playbook = usePlaybook();
-  return { items: deskItems(playbook.data), ready: playbook.isSuccess };
+  const progress = useProgress();
+  return {
+    items: deskItems(progress.data?.tried),
+    trials: progress.data?.trials ?? 0,
+    ready: progress.isSuccess,
+  };
 }

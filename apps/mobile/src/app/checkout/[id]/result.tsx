@@ -1,11 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { Button } from '@/components/button';
 import { DeskScene, SETTLED_MS } from '@/components/desk/desk-scene';
+import { Group, GroupRow } from '@/components/group';
 import { StepScreen } from '@/components/step-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
@@ -16,11 +17,15 @@ import { outcomeKey, type SavedOutcome } from '@/lib/checkout';
 import { useDesk } from '@/lib/desk';
 import { useFeedback, useMotionLevel } from '@/lib/feedback';
 import { queryClient, useLabels } from '@/lib/queries';
+import { useSettings } from '@/lib/settings';
 
 /**
  * El resultado, dicho con honestidad (al estilo de Self-E): cuántas veces se probó y si todavía
- * no es seguro. "Ayudó" significa que mejoró más de lo habitual para esta persona. Si ayudó por
- * primera vez, su objeto llega a "Tu escritorio": es el único momento que se celebra.
+ * no es seguro. "Ayudó" significa que mejoró más de lo habitual para esta persona.
+ *
+ * Se celebra haber terminado la prueba, **no** que haya ayudado: la onda se calma, suena lo mismo
+ * y, si es la primera vez con ese tema, su objeto llega al escritorio. Premiar solo "ayudó"
+ * empujaría a contestarlo y estropearía lo que aprende la app (notas de retención, regla 1).
  */
 export default function CheckoutResult() {
   const t = useT();
@@ -29,20 +34,26 @@ export default function CheckoutResult() {
   const level = useMotionLevel();
   const feedback = useFeedback();
   const desk = useDesk();
+  const { settings, update } = useSettings();
   const { id } = useLocalSearchParams<{ id: string }>();
   const data = queryClient.getQueryData<SavedOutcome>(outcomeKey(id));
-  const helped = data?.checkin.outcome === 'helped' && data.checkin.adjustment?.kind !== 'baseline';
+  // Se ofrece una sola vez, al final de una prueba (el momento en que tiene sentido).
+  const [offerRecap] = useState(() => settings.recapDay === 'off' && !settings.recapOffered);
 
-  // Un solo sonido al llegar. Si ayudó, el arpegio suena cuando la onda queda tranquila.
+  // Un solo sonido, el mismo para cualquier resultado, cuando la onda queda tranquila.
   useEffect(() => {
-    if (!helped) {
-      feedback.confirm();
-      return;
-    }
-    const timer = setTimeout(feedback.success, SETTLED_MS);
+    const timer = setTimeout(feedback.result, SETTLED_MS);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al llegar a la pantalla
   }, []);
+
+  function answerRecap(choose: boolean) {
+    update({ recapOffered: true });
+    if (choose) {
+      router.dismissTo('/today');
+      router.navigate('/settings');
+    }
+  }
 
   if (!data) return null;
 
@@ -75,6 +86,7 @@ export default function CheckoutResult() {
   }
   const evidence = isComparison ? null : t.checkout.evidence(here.helped, here.trials);
   if (evidence) lines.push(evidence);
+  lines.push(t.desk.learned);
 
   // El objeto nuevo todavía no está en la lista (se está recargando): se suma aquí.
   const items = desk.items.filter((item) => item !== newItem);
@@ -104,10 +116,19 @@ export default function CheckoutResult() {
         <DeskScene
           items={items}
           highlight={newItem}
-          settle={helped}
+          settle
           accessibilityLabel={t.desk.label([...items, ...(newItem ? [newItem] : [])].map((item) => t.desk.items[item]))}
         />
       </View>
+      {offerRecap ? (
+        <Group title={t.checkout.recapOfferTitle}>
+          <GroupRow first>
+            <ThemedText type="callout">{t.checkout.recapOfferBody}</ThemedText>
+            <Button variant="secondary" title={t.checkout.recapOfferYes} onPress={() => answerRecap(true)} />
+            <Button variant="plain" title={t.checkout.recapOfferNo} onPress={() => answerRecap(false)} />
+          </GroupRow>
+        </Group>
+      ) : null}
     </StepScreen>
   );
 }

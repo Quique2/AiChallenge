@@ -15,7 +15,6 @@ export default function Reminder() {
   const t = useT();
   const { draft } = useCheckinDraft();
   const checkin = draft.result?.checkin;
-  const adjustment = draft.result?.proposal?.adjustment;
 
   const accept = useMutation({
     mutationFn: async (minutes: number | null) => {
@@ -25,7 +24,7 @@ export default function Reminder() {
           checkin!.id,
           minutes,
           t.reminder.notificationTitle,
-          t.reminder.notificationBody(adjustment?.title ?? ''),
+          t.reminder.notificationBody,
         ).catch(() => false);
       }
       return accepted;

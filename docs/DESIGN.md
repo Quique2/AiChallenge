@@ -63,9 +63,11 @@ Hay tres niveles de movimiento (`useMotionLevel` en `src/lib/feedback.ts`). La p
 ## 6. Avisos
 
 - Recordatorios solo cuando la persona los pide (25 o 50 minutos, o ninguno). Uno por prueba y como mucho 5 al día. El permiso se pide en ese momento, no al instalar.
+- Lo que se ve con el teléfono bloqueado no dice qué ajuste ni qué molesta: "¿Cómo te fue? Cuando quieras, cuéntanos cómo te fue con la prueba". Sin sonido, sin número en el ícono y nunca "urgente" (`active` para el "¿cómo te fue?", `passive` para el resumen).
+- Un aviso no se repite si no se contesta. Nada de avisos para "recuperar" a quien dejó de usar la app.
 - Nada de rachas, insignias, rankings ni mensajes del tipo "llevas 3 días sin…".
 - El progreso se acumula y nunca baja: "Tu escritorio" (sección 11). Se puede ocultar.
-- **Resumen semanal** (opcional, apagado por defecto): un aviso sin sonido a las 10:00 del día que la persona elige. Trae tres partes, siempre en el mismo orden: lo que probó, lo que ayudó y lo que más le sirve. Lo predecible es el hábito; no hay sorpresas, premios variables ni nada que se desbloquee. Si no hubo pruebas: "Puede que hayas descansado o que no lo hayas anotado. Las dos cosas están bien".
+- **Resumen semanal** (opcional, apagado por defecto): un aviso sin sonido el día y a la hora que la persona elige (9:00, 13:00 o 17:00). Se ofrece una sola vez, al terminar una prueba, y se puede activar en Ajustes. Trae tres partes, siempre en el mismo orden: lo que probó, lo que ayudó y lo que más le sirve. Lo predecible es el hábito; no hay sorpresas, premios variables ni nada que se desbloquee. Si no hubo pruebas: "Puede que hayas descansado o que no lo hayas anotado. Las dos cosas están bien". Tras 5 semanas sin abrirlo, Hoy pregunta una vez si lo sigue queriendo ("Está bien de las dos formas").
 
 ## 7. Medición
 
@@ -114,32 +116,36 @@ Fondo crema con tipografía serif de exhibición y acento terracota; una tarjeta
 
 ## 11. Tu escritorio, el modo con detalles y los sonidos
 
-**Tu escritorio** es la escena del ícono en versión ancha (`docs/brand/draw_scene.py`, 64 × 28 pixeles, por capas). Cada ajuste que ayuda deja un objeto: audífonos, lámpara cálida, persiana, taza para una pausa y 10 más (`src/lib/desk.ts`).
+**Tu escritorio** es la escena del ícono en versión ancha (`docs/brand/draw_scene.py`, 64 × 28 pixeles, por capas). Cada ajuste que la persona **prueba hasta el final** deja un objeto: audífonos, lámpara cálida, persiana, taza para una pausa y 10 más (`src/lib/desk.ts`, `GET /v1/progress`).
 
-- Se gana solo cuando algo **ayudó** (el resultado relativo de la sección 7), nunca por usar la app.
-- **Nunca se pierde.** No caduca, no hay rachas y no se muestra "te faltan N".
-- Hoy dice "N cosas que te sirven": un número que solo sube.
-- Se celebra **una vez**, en el resultado: el objeto aparece y suena el arpegio. Lo demás es silencioso.
+- **Se premia la prueba, no el resultado.** El objeto llega haya ayudado o no, y el final suena y se ve igual para "ayudó", "no ayudó" y "no está claro": "Ya sabes algo más de este espacio". Antes de contestar nunca se promete nada por una respuesta. Si solo "ayudó" ganara algo, la app empujaría a contestarlo, y ese es justo el dato que aprende el motor y que va en la solicitud a la empresa (premiar respuestas empeora su calidad: Dejonckheere et al., 2024; regla 1 de las notas de retención).
+- **Nunca se pierde.** No caduca, no hay rachas, no hay huecos vacíos ni "te faltan N" o "3 de 14".
+- Hoy dice "N pruebas terminadas": un número que solo sube.
+- Se celebra **una vez por prueba**, en el resultado y dentro de la escena: la onda se calma, el objeto nuevo aparece y suena el tono del resultado. Lo demás es silencioso.
 - El cielo de la ventana sigue la hora del teléfono (amanecer, día, atardecer y noche). No es una notificación ni pide nada.
 - La onda del monitor pasa de ruidosa a tranquila al terminar un registro: es la metáfora de la app (el entorno que se calma).
 - VoiceOver lee la escena como una imagen con la lista de objetos.
 
 **El aviso de Hoy** ofrece una sola vez las animaciones con detalles ("Activar animaciones con detalles" / "Así está bien") y no vuelve a aparecer. Los sonidos y la vibración no se encienden con él: cada uno pide su propio interruptor en Ajustes, donde también se pueden probar.
 
-**Progreso** sin presión: el único "premio" es información sobre el entorno ("Lo probaste 3 veces aquí; ayudó en 2") y el objeto de lo que ayudó. Sin puntos, niveles ni frases sobre la persona. Antes de sumar algo que retenga, dos preguntas: ¿se puede dejar sin perder nada? ¿castiga tomarse un descanso? (prueba de la propuesta de Ley de Equidad Digital de la UE).
+**Progreso** sin presión: el único "premio" es información sobre el entorno ("Lo probaste 3 veces aquí; ayudó en 2") y el objeto de lo que se probó. Sin puntos, niveles ni frases sobre la persona ("¡Eres genial!", "Sigue así", "deberías"). Antes de sumar algo que retenga, tres preguntas: ¿se puede dejar sin perder nada? ¿castiga tomarse un descanso? (prueba de la propuesta de Ley de Equidad Digital de la UE) ¿premia una respuesta en lugar de la participación?
+
+**Plan "si…, entonces…"**: al aceptar un ajuste, "Listo" muestra "Tu plan: la próxima vez que toque «Leer» aquí, usa audífonos con cancelación de ruido". Decir cuándo y dónde se hará algo ayuda a hacerlo (Sheeran et al., 2024, 642 pruebas); no lleva hora fija, porque las ventanas rígidas salieron peor (Beshears et al., 2021).
+
+**Qué se mide** para saber si la app sirve: pruebas terminadas, cosas aprendidas y solicitudes escritas, no el uso diario. Que el uso baje con el tiempo es lo esperado en apps de salud (3.3 % siguen a los 30 días: Baumel et al., 2019) y no es un fracaso si la persona ya aprendió lo que le sirve.
 
 **Sonidos** (`docs/brand/make_sounds.py`, síntesis propia y determinista):
 
 | Regla | Valor |
 |---|---|
 | Por defecto | Apagados. Se activan en Ajustes, con un botón para probarlos |
-| Cuándo | Solo lo que la persona provoca o el fin de una espera: aceptar un ajuste, "ayudó", empieza y termina la escucha, ya están los hallazgos y tocar la escena. **Nunca** al navegar, elegir una opción, escribir, abrir la app ni en errores |
-| Cuántos | Seis, todos en la misma tonalidad. Entre un sonido y otro pasan al menos 200 ms |
+| Cuándo | Solo lo que la persona provoca o el fin de una espera: empieza la escucha, ya están los hallazgos, aceptar un ajuste, terminar una prueba (el mismo tono para cualquier resultado) y tocar la escena. **Nunca** al navegar, elegir una opción, escribir, abrir la app, en errores ni en los avisos |
+| Cuántos | Cinco, en la misma tonalidad. Como mucho 3 en un registro y 1 por acción. Entre un sonido y otro pasan al menos 200 ms, y tocar la escena suena como mucho una vez cada 2 s |
 | Modo silencio | Categoría `ambient` de iOS: callan con el interruptor y se mezclan con la música en lugar de cortarla |
 | Timbre | Marimba con fieltro en pentatónica de Do; el "pixel" es una onda triangular filtrada |
-| Frecuencias | Fundamentales de 392 a 880 Hz; nada audible por encima de ~4 kHz |
-| Envolvente | Ataque de 6 a 10 ms (sin clics), caída exponencial |
-| Duración | De 0.12 s (el "pixel") a 0.9 s (el arpegio del resultado) |
-| Volumen | Picos de -27 a -24 dBFS en el archivo, nunca más de -20; "Bajo" (por defecto) los baja unos 3 dB |
+| Frecuencias | Fundamentales de 440 a 880 Hz, una o dos notas. Al menos 20 dB menos de energía entre 2.5 y 5.5 kHz (la banda más áspera) y nada por encima de 5 kHz |
+| Envolvente | Ataque de 18 ms (sin clics) y caída larga; sin trémolo |
+| Duración | Confirmar, 0.4 s; el resultado, 0.65 s; nada pasa de 0.7 s |
+| Volumen | Mismo volumen percibido (RMS de -33 dBFS, ±1 dB) y picos de -24 dBFS, nunca más de -20; "Bajo" (por defecto) los baja unos 3 dB. El script falla si un sonido no cumple |
 | Grabación | El aviso de "empieza a escuchar" termina antes de grabar, para no colarse en el análisis |
 | Vibración | Si está encendida, acompaña al sonido en el mismo momento (guía de Apple) |

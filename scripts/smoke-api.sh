@@ -83,6 +83,8 @@ check "audio inválido → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/scan/photo" -
 check "mis ajustes" 200 "${AUTH[@]}" "$BASE/v1/playbook"
 expect ".__len__()" 1 "entradas en mis ajustes"
 expect "[0]['adjustment']['id']" "$ADJUSTMENT" "ajuste guardado"
+check "progreso" 200 "${AUTH[@]}" "$BASE/v1/progress"
+expect "['tried'][0]" "$ADJUSTMENT" "ajuste probado en el progreso"
 
 check "varios sin foco → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/checkins" \
   -d '{"task":"writing","feeling":"drained","effort_before":3,"discomfort_before":3,"observations":[{"stimulus":"voices","response":"yes"},{"stimulus":"too_cold","response":"yes"}]}'

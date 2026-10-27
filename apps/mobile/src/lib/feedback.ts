@@ -14,8 +14,9 @@ import { playSound, SOUND_MS, VOLUME, type Sound } from '@/lib/sounds';
  * Elegir una opción o pasar de pregunta no suena ni vibra: lo frecuente con sonido cansa.
  *
  * - `confirm`: aceptar un ajuste (suena cuando la onda del monitor queda tranquila).
- * - `success`: algo ayudó y se suma a "Tu escritorio".
- * - `cue(sound)`: avisos de una pantalla concreta (empieza o termina la escucha, hallazgos, escena).
+ * - `result`: terminaste una prueba. Es el mismo haya ayudado o no: se premia probar, no la
+ *   respuesta, para no empujar a contestar "ayudó".
+ * - `cue(sound)`: avisos de una pantalla concreta (empieza la escucha, hallazgos, escena).
  */
 export function useFeedback() {
   const { settings } = useSettings();
@@ -38,8 +39,8 @@ export function useFeedback() {
       sound('confirm');
       haptic('success');
     },
-    success: () => {
-      sound('success');
+    result: () => {
+      sound('result');
       haptic('success');
     },
     /** Se cumple cuando el sonido terminó (o enseguida si no suena): así no se cuela en una grabación. */

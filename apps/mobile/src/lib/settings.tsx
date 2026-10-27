@@ -5,6 +5,9 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 export type RecapDay = 'off' | 'mon' | 'wed' | 'fri' | 'sun';
 
 /** Día de la semana como lo cuenta iOS (1 = domingo). */
+export type RecapHour = 9 | 13 | 17;
+export const RECAP_HOURS: RecapHour[] = [9, 13, 17];
+
 export const RECAP_WEEKDAY: Record<Exclude<RecapDay, 'off'>, number> = { sun: 1, mon: 2, wed: 4, fri: 6 };
 
 export type Settings = {
@@ -18,8 +21,13 @@ export type Settings = {
   haptics: boolean;
   /** "Tu escritorio" en Hoy. Se puede ocultar; ocultarlo no borra nada. */
   showDesk: boolean;
-  /** Resumen semanal opcional: el día elegido, a las 10:00. */
+  /** Resumen semanal opcional: el día y la hora que elija la persona. */
   recapDay: RecapDay;
+  recapHour: RecapHour;
+  /** Última vez que abrió el resumen (ms). Tras 5 semanas sin abrirlo, se pregunta si lo sigue queriendo. */
+  recapSeenAt: number;
+  /** Ya se ofreció el resumen al terminar una prueba (se ofrece una sola vez). */
+  recapOffered: boolean;
   softContrast: boolean;
   /** Consentimientos separados para el escaneo; apagados hasta que la persona los active. */
   scanAudio: boolean;
@@ -38,6 +46,9 @@ const DEFAULTS: Settings = {
   haptics: false,
   showDesk: true,
   recapDay: 'off',
+  recapHour: 9,
+  recapSeenAt: 0,
+  recapOffered: false,
   softContrast: false,
   scanAudio: false,
   scanPhoto: false,

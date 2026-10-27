@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -9,10 +10,14 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/i18n';
-import { deskItems } from '@/lib/desk';
+import { useDesk } from '@/lib/desk';
 import { useMotionLevel } from '@/lib/feedback';
-import { useLabels, usePlaybook, useTrying } from '@/lib/queries';
+import { cancelRecap } from '@/lib/notifications';
+import { keys, queryClient, useLabels, usePlaybook, useTrying } from '@/lib/queries';
 import { useSettings } from '@/lib/settings';
+
+/** Tras 5 semanas sin abrir el resumen, se pregunta una vez si lo sigue queriendo (nunca se insiste). */
+const RECAP_UNSEEN_MS = 5 * 7 * 24 * 60 * 60 * 1000;
 
 export default function Today() {
   const t = useT();
@@ -22,13 +27,22 @@ export default function Today() {
   const { settings, update } = useSettings();
   const trying = useTrying();
   const playbook = usePlaybook();
+  const desk = useDesk();
+  const [openedAt] = useState(() => Date.now());
   const lastHelped = playbook.data?.[0];
   // Si la persona ocultó su progreso, la escena se queda sin objetos (no se borra nada).
-  const items = settings.showDesk ? deskItems(playbook.data) : [];
+  const items = settings.showDesk ? desk.items : [];
+  const askAboutRecap = settings.recapDay !== 'off' && openedAt - settings.recapSeenAt > RECAP_UNSEEN_MS;
 
   function refresh() {
     trying.refetch();
     playbook.refetch();
+    queryClient.invalidateQueries({ queryKey: keys.progress });
+  }
+
+  async function stopRecap() {
+    await cancelRecap();
+    update({ recapDay: 'off' });
   }
 
   return (
@@ -64,7 +78,7 @@ export default function Today() {
         <View style={styles.caption}>
           {settings.showDesk ? (
             <ThemedText type="footnote" themeColor="textSecondary" style={styles.shrink}>
-              {items.length ? `${t.today.deskTitle} · ${t.today.deskCount(items.length)}` : t.today.deskEmpty}
+              {desk.trials ? `${t.today.deskTitle} · ${t.today.deskCount(desk.trials)}` : t.today.deskEmpty}
             </ThemedText>
           ) : null}
           {level === 'detailed' ? (
@@ -85,6 +99,20 @@ export default function Today() {
         <Button title={t.today.start} onPress={() => router.push('/checkin/task')} style={styles.cta} />
         <Button variant="plain" title={t.today.seeWeek} onPress={() => router.push('/recap')} style={styles.cta} />
       </View>
+
+      {askAboutRecap ? (
+        <Group title={t.today.recapStillTitle}>
+          <GroupRow first>
+            <ThemedText type="callout">{t.today.recapStillBody}</ThemedText>
+            <Button
+              variant="secondary"
+              title={t.today.recapKeep}
+              onPress={() => update({ recapSeenAt: Date.now() })}
+            />
+            <Button variant="plain" title={t.today.recapStop} onPress={stopRecap} />
+          </GroupRow>
+        </Group>
+      ) : null}
 
       {/* Se ofrece una sola vez y no vuelve a aparecer: la persona elige, sin insistir. */}
       {!settings.experienceOffered ? (

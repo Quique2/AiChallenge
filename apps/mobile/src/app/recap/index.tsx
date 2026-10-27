@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -10,9 +10,10 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/i18n';
 import { stepEntering } from '@/lib/animations';
-import { deskItems } from '@/lib/desk';
+import { useDesk } from '@/lib/desk';
 import { useMotionLevel } from '@/lib/feedback';
 import { useDone, usePlaybook } from '@/lib/queries';
+import { useSettings } from '@/lib/settings';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -27,7 +28,15 @@ export default function Recap() {
   const level = useMotionLevel();
   const done = useDone();
   const playbook = usePlaybook();
+  const desk = useDesk();
   const [since] = useState(() => Date.now() - WEEK_MS);
+  const { update } = useSettings();
+
+  // Abrirlo cuenta como "sigue sirviendo": así no se pregunta si lo quiere mientras lo use.
+  useEffect(() => {
+    update({ recapSeenAt: Date.now() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al abrir
+  }, []);
 
   const week = (done.data ?? []).filter(
     (checkin) => new Date(checkin.created_at).getTime() >= since && checkin.adjustment?.kind !== 'baseline',
@@ -36,7 +45,7 @@ export default function Recap() {
     ...new Set(week.filter((c) => c.outcome === 'helped').map((c) => c.adjustment?.title ?? '')),
   ].filter(Boolean);
   const best = playbook.data?.[0];
-  const items = deskItems(playbook.data);
+  const items = desk.items;
 
   const parts = [
     { label: t.recap.triedLabel, text: week.length ? t.recap.tried(week.length) : t.recap.triedNone },

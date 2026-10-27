@@ -121,7 +121,7 @@ export default function ProposalScreen() {
           <View style={styles.desk}>
             <SymbolView name="sparkles" size={14} tintColor={theme.accent} accessibilityElementsHidden />
             <ThemedText type="footnote" themeColor="textSecondary">
-              {t.desk.ifHelps}
+              {t.desk.afterTrial}
             </ThemedText>
           </View>
         ) : null}

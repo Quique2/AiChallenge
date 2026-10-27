@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   Easing,
@@ -23,6 +23,8 @@ const TICK_MS = 300;
  * uno y otro. No hay oscilaciones continuas (las de ~0.2 Hz marean; guía de Apple).
  */
 const TWITCHES: Record<number, 'sway' | 'steam' | 'fan'> = { 2: 'sway', 6: 'steam', 7: 'steam', 11: 'fan', 13: 'fan' };
+/** Tocar varias veces seguidas no repite el sonido: uno cada 2 s como mucho. */
+const PIXEL_GAP_MS = 2000;
 const SETTLE: Wave[] = ['noisy', 'mid', 'calm'];
 const SETTLE_FRAME_MS = 150;
 /** Cuándo queda tranquila la onda: ahí suenan los sonidos y la vibración del momento. */
@@ -65,6 +67,7 @@ export function DeskScene({ items, highlight, settle, interactive, accessibility
   const [wakes, setWakes] = useState(settle ? 1 : 0);
   const [alive, setAlive] = useState(level === 'detailed');
   const [tick, setTick] = useState(0);
+  const lastPixel = useRef(0);
 
   const owned = new Set<ItemId>([...items, ...(highlight ? [highlight] : [])]);
   const dim = owned.has('screenDim');
@@ -93,7 +96,11 @@ export function DeskScene({ items, highlight, settle, interactive, accessibility
   useFocusEffect(useCallback(() => () => setAlive(false), []));
 
   function wake() {
-    feedback.cue('pixel');
+    const now = Date.now();
+    if (now - lastPixel.current > PIXEL_GAP_MS) {
+      lastPixel.current = now;
+      feedback.cue('pixel');
+    }
     if (level === 'reduced') return;
     setWave('noisy');
     setWakes((w) => w + 1);

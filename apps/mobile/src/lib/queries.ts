@@ -17,6 +17,7 @@ export const keys = {
   done: ['checkins', 'done'] as const,
   checkin: (id: string) => ['checkin', id] as const,
   playbook: ['playbook'] as const,
+  progress: ['progress'] as const,
   health: ['health'] as const,
 };
 
@@ -61,6 +62,10 @@ export function useCheckin(id: string) {
 
 export function usePlaybook() {
   return useQuery({ queryKey: keys.playbook, queryFn: api.playbook });
+}
+
+export function useProgress() {
+  return useQuery({ queryKey: keys.progress, queryFn: api.progress });
 }
 
 export function useHealth() {
