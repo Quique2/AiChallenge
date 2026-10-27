@@ -52,7 +52,7 @@ export default function Today() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={trying.isRefetching} onRefresh={refresh} />}>
       {trying.data?.length ? (
-        <Group title={t.today.tryingTitle}>
+        <Group title={t.today.tryingTitle} footer={t.today.tryingFooter}>
           {trying.data.map((checkin, index) => (
             <GroupRow key={checkin.id} first={index === 0}>
               <ThemedText type="bodyStrong">{checkin.adjustment?.title}</ThemedText>

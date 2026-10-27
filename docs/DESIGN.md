@@ -45,7 +45,7 @@ Hay tres niveles de movimiento (`useMotionLevel` en `src/lib/feedback.ts`). La p
 |---|---|---|
 | **Reducido** | "Reducir movimiento" de iOS (en vivo) o "Siempre reducido" en Ajustes. Gana siempre | Solo fundidos. Nada se repite ni se desplaza. Sin franja de análisis ni columnas de nivel |
 | **Tranquilo** (por defecto) | Sin "Animaciones con detalles" | Movimiento breve y con propósito: barra de pasos, fundidos, la franja al analizar la foto y la onda del monitor que se calma |
-| **Con detalles** | "Animaciones con detalles" en Ajustes o en el aviso de Hoy | Además: la escena se mueve un rato al aparecer o al tocarla, el objeto nuevo "cae" con cuatro destellos, los marcadores se encienden en orden y la palomita aparece con un fundido |
+| **Con detalles** | "Animaciones con detalles" en Ajustes o en el aviso de Hoy | Además: la escena se mueve un rato al aparecer o al tocarla, el objeto nuevo "cae" dos pixeles y se enciende a saltos (sin partículas ni confeti), los marcadores se encienden en orden y la palomita aparece con un fundido |
 
 | Regla | Valor |
 |---|---|

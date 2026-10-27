@@ -50,6 +50,7 @@ const en: Strings = {
     promptBody: "We'll look at your surroundings together and suggest one adjustment to try.",
     start: 'Check my surroundings',
     tryingTitle: 'Trying now',
+    tryingFooter: 'Everything is as you left it. Tell us whenever you like.',
     tellMe: 'Tell us how it went',
     lastHelped: 'What helped last',
     deskTitle: 'Your desk',

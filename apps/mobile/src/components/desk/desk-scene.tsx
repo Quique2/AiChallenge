@@ -7,7 +7,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -157,7 +156,6 @@ export function DeskScene({ items, highlight, settle, interactive, accessibility
           <Layer source={LAYERS.steam[1]} visible={steamFrame === 1} />
         </>
       ) : null}
-      {highlight && level === 'detailed' && unit > 0 ? <Sparkles id={highlight} unit={unit} /> : null}
     </View>
   );
 
@@ -222,49 +220,7 @@ function ItemLayer({
   );
 }
 
-/** Cuatro pixeles claros alrededor del objeto nuevo que se encienden y se apagan una sola vez. */
-function Sparkles({ id, unit }: { id: ItemId; unit: number }) {
-  const [x0, y0, x1, y1] = ITEMS[id].box;
-  const points = [
-    [x0 - 1, y0 - 1],
-    [x1 + 1, y0],
-    [x0, y1 + 1 > SCENE.height - 1 ? y1 : y1 + 1],
-    [x1 + 1, y1 - 1],
-  ];
-  return (
-    <>
-      {points.map(([x, y], index) => (
-        <Sparkle key={index} x={x * unit} y={y * unit} size={unit} delay={650 + index * 90} />
-      ))}
-    </>
-  );
-}
-
-function Sparkle({ x, y, size, delay }: { x: number; y: number; size: number; delay: number }) {
-  const glow = useSharedValue(0);
-  useEffect(() => {
-    glow.value = withDelay(
-      delay,
-      withSequence(
-        withTiming(1, { duration: 160, easing: Easing.steps(2) }),
-        withTiming(0, { duration: 320, easing: Easing.steps(3) }),
-      ),
-    );
-  }, [delay, glow]);
-  const style = useAnimatedStyle(() => ({ opacity: glow.value }));
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={[styles.sparkle, { left: x, top: y, width: size, height: size }, style]}
-    />
-  );
-}
-
 const styles = StyleSheet.create({
-  sparkle: {
-    position: 'absolute',
-    backgroundColor: '#F7EEDB', // "cream" de la paleta de la escena
-  },
   scene: {
     width: '100%',
     aspectRatio: SCENE.width / SCENE.height,

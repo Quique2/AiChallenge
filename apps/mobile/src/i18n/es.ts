@@ -55,6 +55,7 @@ const es = {
     promptBody: 'Revisamos juntos tu entorno y te proponemos un solo ajuste para probar.',
     start: 'Revisar mi entorno',
     tryingTitle: 'En prueba',
+    tryingFooter: 'Todo está como lo dejaste. Puedes contarlo cuando quieras.',
     tellMe: 'Contar cómo me fue',
     lastHelped: 'Lo último que te ayudó',
     deskTitle: 'Tu escritorio',
