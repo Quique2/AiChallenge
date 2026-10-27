@@ -1,9 +1,12 @@
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { LayoutAnimationConfig } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { checkEntering } from '@/lib/animations';
+import { useFeedback, useMotionLevel } from '@/lib/feedback';
 
 export type Option = { id: string; label: string; hint?: string };
 
@@ -17,12 +20,17 @@ type ChoiceListProps = {
 
 /**
  * Lista de opciones en un solo grupo con separadores finos (no una tarjeta por fila).
- * Lo elegido se nota por el fondo y por un ícono: nunca solo por el color.
+ * Lo elegido se nota por el fondo y por un ícono: nunca solo por el color. Las casillas suenan
+ * al marcarse (si hay sonidos); las de una sola opción no, porque casi siempre llevan a la
+ * siguiente pregunta y ahí suena el paso.
  */
 export function ChoiceList({ options, selected, onSelect, multiple = false }: ChoiceListProps) {
   const theme = useTheme();
+  const feedback = useFeedback();
+  const level = useMotionLevel();
 
   return (
+    <LayoutAnimationConfig skipEntering>
     <View
       style={[styles.group, { backgroundColor: theme.backgroundElement }]}
       accessibilityRole={multiple ? undefined : 'radiogroup'}>
@@ -32,7 +40,10 @@ export function ChoiceList({ options, selected, onSelect, multiple = false }: Ch
         return (
           <Pressable
             key={option.id}
-            onPress={() => onSelect(option.id)}
+            onPress={() => {
+              if (multiple) feedback.select();
+              onSelect(option.id);
+            }}
             accessibilityRole={multiple ? 'checkbox' : 'radio'}
             accessibilityState={multiple ? { checked: isSelected } : { selected: isSelected }}
             accessibilityHint={option.hint}
@@ -50,18 +61,21 @@ export function ChoiceList({ options, selected, onSelect, multiple = false }: Ch
               ) : null}
             </View>
             {multiple || isSelected ? (
-              <SymbolView
-                name={icon}
-                size={22}
-                tintColor={isSelected ? theme.primary : theme.textSecondary}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-              />
+              <Animated.View key={isSelected ? 'on' : 'off'} entering={isSelected ? checkEntering(level) : undefined}>
+                <SymbolView
+                  name={icon}
+                  size={22}
+                  tintColor={isSelected ? theme.primary : theme.textSecondary}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+              </Animated.View>
             ) : null}
           </Pressable>
         );
       })}
     </View>
+    </LayoutAnimationConfig>
   );
 }
 

@@ -1,8 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import { router, type Href } from 'expo-router';
 
+import { useT } from '@/i18n';
 import { api } from '@/lib/api';
 import { useCheckinDraft } from '@/lib/checkin-draft';
+import { useFeedback } from '@/lib/feedback';
 import { useCatalog, useSpaces } from '@/lib/queries';
 import type { NewCheckin } from '@/lib/types';
 
@@ -13,6 +15,8 @@ const FALLBACK_DOMAINS = ['sound', 'light', 'sight', 'body'];
  * lugares: con uno, se usa ese y la persona se ahorra un paso.
  */
 export function useCheckinSteps() {
+  const t = useT();
+  const feedback = useFeedback();
   const spaces = useSpaces();
   const catalog = useCatalog();
   const askPlace = (spaces.data?.length ?? 0) !== 1;
@@ -22,12 +26,17 @@ export function useCheckinSteps() {
 
   return {
     total: order.length,
-    number: (step: string) => order.indexOf(step) + 1,
+    /** Lo que muestra la barra de progreso de `StepScreen`. */
+    progress: (step: string) => {
+      const number = order.indexOf(step) + 1;
+      return { number, total: order.length, label: t.checkin.step(number, order.length) };
+    },
     onlySpaceId: askPlace ? undefined : spaces.data?.[0]?.id,
     /** Avanza al paso que sigue a `step`; `false` si ya no quedan pasos. */
     goAfter: (step: string) => {
       const next = order[order.indexOf(step) + 1];
       if (!next) return false;
+      feedback.step();
       if (domains.includes(next)) router.push({ pathname: '/checkin/[domain]', params: { domain: next } });
       else router.push(`/checkin/${next}` as Href);
       return true;

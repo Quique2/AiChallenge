@@ -5,22 +5,33 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 export type Settings = {
   language: 'system' | 'es' | 'en';
   motion: 'system' | 'reduced';
+  /** Modo "Con detalles": la escena en pixel art cobra vida y los logros se celebran. */
+  details: boolean;
+  /** Sonidos suaves de la interfaz. Siempre callan con el interruptor de silencio de iOS. */
+  sounds: boolean;
+  soundVolume: 'low' | 'medium';
   haptics: boolean;
   softContrast: boolean;
   /** Consentimientos separados para el escaneo; apagados hasta que la persona los active. */
   scanAudio: boolean;
   scanPhoto: boolean;
   onboarded: boolean;
+  /** Ya se ofreció elegir cómo se ve y suena la app (en la bienvenida o con el aviso de Hoy). */
+  experienceOffered: boolean;
 };
 
 const DEFAULTS: Settings = {
   language: 'system',
   motion: 'system',
+  details: false,
+  sounds: false,
+  soundVolume: 'low',
   haptics: false,
   softContrast: false,
   scanAudio: false,
   scanPhoto: false,
   onboarded: false,
+  experienceOffered: false,
 };
 
 const STORAGE_KEY = 'spaceease.settings.v1';

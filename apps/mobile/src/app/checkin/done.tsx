@@ -1,29 +1,25 @@
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
-import { PixelScene } from '@/components/pixel-scene';
+import { DeskScene } from '@/components/desk/desk-scene';
 import { StepScreen } from '@/components/step-screen';
-import { Spacing } from '@/constants/theme';
 import { useT } from '@/i18n';
+import { useDesk } from '@/lib/desk';
 
+/** Al aceptar un ajuste, la onda del monitor se calma: el entorno que se acomoda. */
 export default function Done() {
   const t = useT();
+  const desk = useDesk();
   return (
     <StepScreen
       title={t.reminder.doneTitle}
       hint={t.reminder.doneBody}
       footer={<Button title={t.common.backToToday} onPress={() => router.dismissTo('/today')} />}>
-      <View style={styles.scene}>
-        <PixelScene size={120} />
-      </View>
+      <DeskScene
+        items={desk.items}
+        settle
+        accessibilityLabel={t.desk.label(desk.items.map((item) => t.desk.items[item]))}
+      />
     </StepScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  scene: {
-    alignItems: 'center',
-    paddingTop: Spacing.four,
-  },
-});

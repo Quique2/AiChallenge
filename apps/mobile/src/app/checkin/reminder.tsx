@@ -7,14 +7,14 @@ import { StepScreen } from '@/components/step-screen';
 import { useT } from '@/i18n';
 import { api } from '@/lib/api';
 import { useCheckinDraft } from '@/lib/checkin-draft';
-import { useHaptics } from '@/lib/feedback';
+import { useFeedback } from '@/lib/feedback';
 import { scheduleCheckout } from '@/lib/notifications';
 import { keys, queryClient } from '@/lib/queries';
 
 /** La persona decide cuándo le preguntamos: un aviso a 25 o 50 minutos, o ninguno. */
 export default function Reminder() {
   const t = useT();
-  const haptics = useHaptics();
+  const feedback = useFeedback();
   const { draft } = useCheckinDraft();
   const checkin = draft.result?.checkin;
   const adjustment = draft.result?.proposal?.adjustment;
@@ -33,7 +33,7 @@ export default function Reminder() {
       return accepted;
     },
     onSuccess: () => {
-      haptics.confirm();
+      feedback.confirm();
       queryClient.invalidateQueries({ queryKey: keys.trying });
       router.push('/checkin/done');
     },

@@ -12,6 +12,7 @@ import { api } from '@/lib/api';
 import { useReducedMotion } from '@/lib/feedback';
 import { queryClient } from '@/lib/queries';
 import { SettingsProvider, useSettings } from '@/lib/settings';
+import { preloadSounds } from '@/lib/sounds';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -35,6 +36,9 @@ function RootNavigator() {
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
+  useEffect(() => {
+    if (ready && settings.sounds) preloadSounds();
+  }, [ready, settings.sounds]);
   useOpenCheckoutFromNotification(ready && settings.onboarded);
   useServerLocale(locale, ready && settings.onboarded);
 
@@ -55,11 +59,15 @@ function RootNavigator() {
         },
       }}>
       <StatusBar style="auto" />
-      {/* Las pestañas y los flujos llevan su propio Stack con encabezado nativo. */}
+      {/*
+        Las pestañas y los flujos llevan su propio Stack con encabezado nativo. Los flujos van a
+        pantalla completa: en hoja, deslizar hacia abajo arrastraba los botones fuera de la vista
+        y podía cerrar el registro a medias. Se cierran con "Cerrar", arriba a la derecha.
+      */}
       <Stack screenOptions={{ headerShown: false, animation: reducedMotion ? 'fade' : 'default' }}>
-        <Stack.Screen name="checkin" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="checkout" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="request" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="checkin" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="checkout" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="request" options={{ presentation: 'fullScreenModal' }} />
       </Stack>
     </ThemeProvider>
   );
