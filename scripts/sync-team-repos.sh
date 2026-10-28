@@ -2,6 +2,10 @@
 # Copia apps/mobile -> nina-col/AiChallengeFront y apps/api -> nina-col/AiChallengeBack.
 # Cada sync es un commit normal "sync monorepo@<sha>" con la lista de cambios; nunca force-push.
 #
+# El equipo trabaja en los espejos. Antes de copiar, el script revisa que cada commit del equipo
+# hecho después del último sync ya esté en lo que se publica (trailer `Mirror-Commit`, que pone
+# scripts/import-team-repos.sh). Si falta alguno, se detiene: sincronizar lo sobrescribiría.
+#
 # Uso: scripts/sync-team-repos.sh [front|back|all]   (por defecto: all)
 set -euo pipefail
 
@@ -10,6 +14,9 @@ BACK_REMOTE="${BACK_REMOTE:-https://github.com/nina-col/AiChallengeBack.git}"
 
 ROOT="$(git rev-parse --show-toplevel)"
 SHA="$(git -C "$ROOT" rev-parse --short HEAD)"
+
+# Nombre del repo en el trailer: nina-col/AiChallengeFront
+repo_name() { sed -E 's#^https://github.com/##; s#\.git$##' <<<"$1"; }
 
 if [[ -n "$(git -C "$ROOT" status --porcelain)" ]]; then
   echo "Hay cambios sin commit en el monorepo; haz commit antes de sincronizar." >&2
@@ -33,9 +40,26 @@ sync_one() {
   git -C "$tmp/mirror" config user.name "$(git -C "$ROOT" config user.name)"
   git -C "$tmp/mirror" config user.email "$(git -C "$ROOT" config user.email)"
 
-  # Rango de cambios desde el último sync (si el espejo lo registra).
+  # Commits del equipo desde el último sync que todavía no están en lo que se va a publicar.
+  local repo last_sync missing=()
+  repo="$(repo_name "$remote")"
+  last_sync="$(git -C "$tmp/mirror" log -1 --format=%H --grep='^sync monorepo@' || true)"
+  while read -r sha; do
+    [[ -z "$sha" ]] && continue
+    [[ "$(git -C "$tmp/mirror" log -1 --format=%s "$sha")" == sync\ monorepo@* ]] && continue
+    git -C "$ROOT" log HEAD --format=%H --grep="^Mirror-Commit: $repo@$sha" | grep -q . && continue
+    missing+=("$(git -C "$tmp/mirror" log -1 --format='%h %an: %s' "$sha")")
+  done < <(git -C "$tmp/mirror" rev-list --no-merges "${last_sync:+$last_sync..}HEAD")
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "[$src] $repo tiene ${#missing[@]} commit(s) del equipo que no están en el monorepo:" >&2
+    printf '    %s\n' "${missing[@]}" >&2
+    echo "  Corre scripts/import-team-repos.sh, revisa la rama y mézclala antes de sincronizar." >&2
+    return 1
+  fi
+
+  # Rango de cambios del monorepo desde el último sync (si el espejo lo registra).
   local last range
-  last="$(git -C "$tmp/mirror" log -1 --format=%s 2>/dev/null | sed -n 's/.*monorepo@\([0-9a-f]\{7,\}\).*/\1/p')"
+  last="$(git -C "$tmp/mirror" log -1 --format=%s --grep='^sync monorepo@' 2>/dev/null | sed -n 's/.*monorepo@\([0-9a-f]\{7,\}\).*/\1/p')"
   if [[ -n "$last" ]] && git -C "$ROOT" cat-file -e "${last}^{commit}" 2>/dev/null; then
     range="${last}..HEAD"
   else
