@@ -167,11 +167,15 @@ Prueba de punta a punta: `scripts/smoke-api.sh [URL]` (27 comprobaciones; crea y
 
 | Repo | Para qué |
 |---|---|
-| `Quique2/AiChallenge` (privado) | **Monorepo de trabajo.** Aquí se edita todo y desde aquí despliega Railway |
-| `nina-col/AiChallengeFront` | Espejo de `apps/mobile`, para que el equipo lea el código de la app |
-| `nina-col/AiChallengeBack` | Espejo de `apps/api`, para que el equipo lea el código del backend |
+| `Quique2/AiChallenge` (privado) | **Monorepo de trabajo.** Todo se integra aquí y desde aquí despliegan Railway y EAS |
+| `nina-col/AiChallengeFront` | Espejo de `apps/mobile`; el equipo trabaja aquí en la app |
+| `nina-col/AiChallengeBack` | Espejo de `apps/api`; el equipo trabaja aquí en el backend |
 
-Los espejos se actualizan con `scripts/sync-team-repos.sh` al cerrar cada iteración: un commit normal `sync monorepo@<sha>` con la lista de cambios, **sin force-push**, así no se pierde su historial. Si alguien hace commit directo en un espejo, avisar para integrarlo en el monorepo antes del siguiente sync (si no, se sobrescribe).
+El equipo trabaja en los espejos y el monorepo integra sus cambios sin cambiar la app de golpe (decisión de Quique, 27 oct):
+
+1. **Importar:** `scripts/import-team-repos.sh` trae cada commit del equipo hecho después del último sync, uno por uno y con su autor, a una rama `equipo/<front|back>-<fecha>`. Cada commit queda marcado con `Mirror-Commit: <repo>@<sha>` y nunca se importa dos veces. Si el monorepo cambió lo mismo, se detiene en esa rama para resolverlo a mano.
+2. **Revisar y mezclar:** tipos, lint y pruebas (y `scripts/smoke-api.sh` si toca la API); después `git merge --no-ff` a main. Mezclar cambios de `apps/api` despliega en Railway.
+3. **Sincronizar:** `scripts/sync-team-repos.sh` publica el monorepo en los espejos con un commit normal `sync monorepo@<sha>`, **sin force-push**. Se detiene si un espejo tiene commits del equipo que todavía no están en lo que se publica, así nunca sobrescribe su trabajo.
 
 ### 5.2 Railway
 

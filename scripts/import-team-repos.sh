@@ -52,7 +52,11 @@ import_one() {
     return 0
   fi
 
-  local branch="equipo/$name-$STAMP" start
+  local branch="equipo/$name-$STAMP" start n=2
+  while git -C "$ROOT" show-ref --quiet --verify "refs/heads/$branch"; do
+    branch="equipo/$name-$STAMP-$n"
+    n=$((n + 1))
+  done
   start="$(git -C "$ROOT" rev-parse --abbrev-ref HEAD)"
   git -C "$ROOT" switch --quiet -c "$branch"
 
@@ -60,8 +64,11 @@ import_one() {
     # -3: si el monorepo cambió el mismo archivo después del sync, se intenta una mezcla de tres vías.
     if ! git -C "$tmp/mirror" format-patch --binary -1 --stdout "$sha" \
         | git -C "$ROOT" am --quiet -3 --keep-cr --directory="$src"; then
-      echo "[$name] no se pudo aplicar $repo@${sha:0:7} sin conflictos." >&2
-      echo "  Resuélvelo en la rama $branch y sigue con 'git am --continue' (o 'git am --abort')." >&2
+      echo "[$name] no se pudo aplicar $repo@${sha:0:7} sin conflictos (el monorepo cambió lo mismo)." >&2
+      echo "  En la rama $branch: resuelve el archivo, 'git add' y 'git am --continue'. Después márcalo" >&2
+      echo "  para que el sync lo reconozca y vuelve a correr este script desde esa rama por el resto:" >&2
+      echo "    git commit --amend --no-edit --trailer \"Mirror-Commit: $repo@$sha\"" >&2
+      echo "  O descarta el intento con 'git am --abort'." >&2
       exit 1
     fi
     git -C "$ROOT" commit --quiet --amend --no-edit --trailer "Mirror-Commit: $repo@$sha"
