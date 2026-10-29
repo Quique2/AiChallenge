@@ -50,7 +50,9 @@
           "microphonePermission": "SpaceEase escucha 10 segundos para notar voces o ruido de fondo. El sonido se analiza en el teléfono y se borra; nunca se envía."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
