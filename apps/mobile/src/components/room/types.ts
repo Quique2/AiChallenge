@@ -39,7 +39,11 @@ export type TypeSpec = {
   base?: boolean;
   /** Decoración libre desde el primer día. */
   decor?: boolean;
-  /** Ajustes del catálogo cuya prueba terminada da este objeto, haya ayudado o no. */
+  /**
+   * Ajustes del catálogo cuya prueba terminada da este objeto, haya ayudado o no. En los tipos de
+   * pared, `facings` 0 = pared derecha y 1 = izquierda; los objetos de superficie toman la
+   * orientación de su anfitrión.
+   */
   adjustments?: string[];
   /**
    * No es un objeto que se coloca: cambia otra pieza cuando la persona lo tiene.
@@ -57,11 +61,14 @@ export type Frame = {
   rect: [number, number, number, number];
   /**
    * Pixel del sprite que cae en el punto de apoyo: la esquina trasera de la huella a `z = 0` (piso),
-   * el punto del slot a la altura de la superficie (superficie) o la esquina inferior trasera del
-   * tramo de pared (pared).
+   * la esquina trasera de la celda del slot a la altura `surface.z` (superficie) o la esquina
+   * inferior trasera del tramo de pared (pared).
    */
   anchor: [number, number];
-  /** Máscara de 1 bit por pixel, por filas de izquierda a derecha, en base64 (hit test exacto). */
+  /**
+   * Máscara de 1 bit por pixel para el hit test exacto: por filas, sin relleno entre filas
+   * (bit `i = y · ancho + x`, el primer pixel en el bit alto), en base64 estándar.
+   */
   mask: string;
 };
 
@@ -92,7 +99,12 @@ export type Manifest = {
 };
 
 /** Catálogo que usa la API para validar (`apps/api/catalog/room.json`): el manifiesto sin cuadros. */
-export type RoomCatalog = Pick<Manifest, 'shell' | 'types'> & { version: 1; size: { w: number; d: number } };
+export type RoomCatalog = Pick<Manifest, 'shell' | 'types'> & {
+  version: 1;
+  size: { w: number; d: number };
+  /** Alto de las paredes en px de arte (filas de 16 px); si falta, 48. */
+  wallHeight?: number;
+};
 
 // ── Layout v1 (se guarda como JSON en `rooms.layout`) ────────────────────────────────────────
 
