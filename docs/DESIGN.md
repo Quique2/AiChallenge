@@ -149,3 +149,18 @@ Fondo crema con tipografía serif de exhibición y acento terracota; una tarjeta
 | Volumen | Mismo volumen percibido (RMS de -33 dBFS, ±1 dB) y picos de -24 dBFS, nunca más de -20; "Bajo" (por defecto) los baja unos 3 dB. El script falla si un sonido no cumple |
 | Grabación | El aviso de "empieza a escuchar" termina antes de grabar, para no colarse en el análisis |
 | Vibración | Si está encendida, acompaña al sonido en el mismo momento (guía de Apple) |
+
+## 12. El cuarto de cada lugar
+
+Cada lugar guardado tiene un cuarto isométrico en pixel art (arte propio: `docs/brand/draw_room.py`; lógica en `apps/mobile/src/components/room/`). Es la cara visible de la memoria por lugar.
+
+- **Se gana un objeto por prueba terminada en ese lugar, ayude o no** (sección 11). No hay puntos, moneda, tienda, saldo ni "te faltan N". Decorar es libre desde el primer día: piso, pared, alfombra, plantas, cuadros, el castor, con 2 a 4 versiones por objeto.
+- **Nunca es la única vista.** "Cuarto / Lista" muestra la misma información; la lista siempre está debajo del cuarto, en texto.
+- **Tocar un objeto dice qué es y qué se sabe de él** ("Probado 3 veces aquí; ayudó 2"), igual para lo que ayudó y lo que no. La app nunca destaca nada por su cuenta: el corcho "Lo que me sirve aquí" lo llena solo la persona.
+- **La persona decide dónde va cada cosa.** La app solo agrega lo recién ganado en un lugar libre razonable (si el escritorio está lleno, con una mesita, como mucho 2 por cuarto); nunca mueve lo que ya está. Lo que no cabe espera en "Tus cosas".
+- **Sin arrastrar** (WCAG 2.5.7): se elige un objeto tocándolo o desde la lista "En el cuarto", y se mueve con las flechas o tocando la casilla destino. Lo que no se puede se dice en texto ("Ese lugar está ocupado"). La cámara es fija, sin zoom.
+- **Se guarda solo al confirmar** ("Guardar cambios"); "Deshacer" y "Cancelar" siempre están. Si otra pantalla guardó antes, se avisa y no se pisa.
+- **Movimiento:** el mismo de la sección 5. Reducido: quieto. Tranquilo: la onda del monitor se calma al abrir. Con detalles: además, un objeto a la vez (ventilador, vapor, el castor que saluda) durante 5 s como mucho.
+- **Nada se pierde ni se deteriora:** no hay plantas que se secan ni mascotas que piden atención. El castor solo está ahí.
+- **"Este lugar cambió"** reinicia las sugerencias de ese lugar sin borrar la historia.
+

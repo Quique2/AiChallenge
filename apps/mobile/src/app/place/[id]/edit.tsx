@@ -18,6 +18,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useLocale, useT } from '@/i18n';
 import { ApiError } from '@/lib/api';
+import { useFeedback } from '@/lib/feedback';
 import { freshUid, useRoom, useSaveRoom } from '@/lib/room';
 
 /** Direcciones en pantalla: el piso isométrico tiene dos ejes en diagonal. */
@@ -54,6 +55,7 @@ export default function EditRoom() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const room = useRoom(id);
   const save = useSaveRoom(id);
+  const feedback = useFeedback();
   const [history, setHistory] = useState<RoomLayout[]>([]);
   const [draft, setDraft] = useState<RoomLayout | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -118,7 +120,12 @@ export default function EditRoom() {
     }
     save.mutate(
       { revision: room.revision, layout: draft },
-      { onSuccess: () => router.back() },
+      {
+        onSuccess: () => {
+          feedback.confirm();
+          router.back();
+        },
+      },
     );
   }
 
@@ -208,6 +215,26 @@ export default function EditRoom() {
               </GroupRow>
             </Group>
           ) : null}
+
+          {/* Elegir sin tocar el dibujo: para VoiceOver y para quien prefiera una lista. */}
+          <Group title={t.room.inRoomTitle}>
+            {layout.items.map((placedItem, index) => (
+              <GroupRow key={placedItem.uid} first={index === 0}>
+                <View style={styles.row}>
+                  <ThemedText style={styles.flex}>{label(placedItem.type)}</ThemedText>
+                  <Button
+                    variant={placedItem.uid === selected ? 'secondary' : 'plain'}
+                    title={placedItem.uid === selected ? t.room.chosen : t.room.choose}
+                    accessibilityHint={label(placedItem.type)}
+                    onPress={() => {
+                      setSelected(placedItem.uid);
+                      setProblem(null);
+                    }}
+                  />
+                </View>
+              </GroupRow>
+            ))}
+          </Group>
 
           {inventory.length ? (
             <Group title={t.room.inventoryTitle} footer={t.room.inventoryFooter}>

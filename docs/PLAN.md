@@ -205,12 +205,23 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 | 1 | ✅ 26 oct | **Ciclo completo sin IA (FMVP)** con la investigación aplicada: registrar, descubrir, sugerencia con motivo, comparación, recordatorio, resultado relativo, Lo que me sirve, solicitud a la empresa, es/en y accesibilidad. App 1.1.0 + API 0.2.0 |
 | 2 | ✅ 26 oct | **Escaneo con foto y sonido:** consentimientos aparte, audio en el teléfono, foto pixelada en el teléfono y Claude Opus 5.5 con hipótesis que la persona confirma. App 1.2.0 + API 0.3.0 |
 | 3 | ✅ 26 oct | **Experiencia y retención sin presión:** arreglos del permiso del micrófono y de los botones fuera de la pantalla; "Tu escritorio" (un objeto por cada prueba terminada, haya ayudado o no, que nunca se pierde); tres niveles de movimiento; sonidos suaves opcionales; resumen semanal opcional; plan "si…, entonces…". App 1.3.0 + API 0.4.0 |
-| 4 | En revisión | **Cuarto isométrico y memoria por lugar** (sección 10): un cuarto decorable por cada lugar, cuyos objetos recuerdan cómo le fue a la persona ahí |
+| 4 | ✅ 29 oct | **Cuarto isométrico y memoria por lugar** (sección 10): memoria por lugar en el motor, "Lo que sé de este lugar", "Usarlo otra vez", cuarto decorable por lugar con editor accesible y el castor en pixel art. App 1.4.0 + API 0.5.0 |
 | 5 | | Redacción con Claude Haiku 5.5 (solicitud y tarjetas), "¿qué puede pedirte tu empresa?" por país y tarjetas de aprendizaje |
 | 6 | | Usuario demo con historial sembrado, revisión de accesibilidad con VoiceOver y texto grande, y enlace público de TestFlight |
 | 7 | | **Validación** con 3–5 personas, idealmente vía Specialisterne y con co-diseño pagado |
 | 8 | | **Pitch:** guion de demo, métricas reales, limitaciones declaradas (tabla del informe) y video de respaldo |
 | ‖ | | **Modelo de audio** (Quique, GPU) sobre niveles por banda → ONNX; se conecta en la iteración 2 |
+
+### Checklist de la iteración 4
+
+- [x] Integrar los cambios de Magda (UX de los registros y mascota) desde la rama `magda` del espejo
+- [x] Motor: nivel "este lugar", recencia de 60 días, "Este lugar cambió" y punto de partida por tipo de lugar
+- [x] API 0.5.0: memoria por lugar, reset, "Usarlo otra vez" y cuartos (GET/PUT con revisión y validación)
+- [x] Arte del cuarto (26 tipos, 4 giros, atlas de 19 KB) con castor en pixel art
+- [x] Lógica isométrica pura con 108 pruebas, misma validación que Rust
+- [x] "Lo que sé de este lugar", cuarto o lista, corcho, editor accesible y objeto ganado que aparece en su cuarto
+- [ ] Probar en un iPhone la build 1.4.0: nitidez del pixel art, editor con VoiceOver, Reducir movimiento
+- [ ] Probar con 3–5 personas el cuarto frente a la lista y revisar que no cambie la proporción de respuestas "ayudó"
 
 ### Checklist de la iteración 3
 
@@ -276,7 +287,7 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 
 ## 10. Propuesta en revisión: cuarto isométrico y memoria por lugar
 
-**Estado:** propuesta de Quique, investigada el 26 de octubre. Falta que el equipo la revise; todavía no hay código.
+**Estado:** implementada el 29 de octubre (fases 0 a 3 y parte de la 4). Reglas de diseño en `docs/DESIGN.md` §12. Falta probar Skia en un iPhone real (fase 0) con la build 1.4.0 y, con usuarios, el cuarto frente a la lista.
 
 - Investigación: [diseño y evidencia](research/research_notes/Escritorio%20isometrico/diseno.md) y [técnica](research/research_notes/Escritorio%20isometrico/tecnica.md).
 - Prototipo: [`prototipo/iso_proto.py`](research/research_notes/Escritorio%20isometrico/prototipo/).
