@@ -20,6 +20,7 @@ export const keys = {
   progress: ['progress'] as const,
   memory: (spaceId: string) => ['memory', spaceId] as const,
   memories: ['memory'] as const,
+  room: (spaceId: string) => ['room', spaceId] as const,
   health: ['health'] as const,
 };
 

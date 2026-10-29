@@ -355,7 +355,7 @@ export function defaultLayout(
   const spec = (t: string) => manifest.types[t];
   const placeable = (t: string) => spec(t).place.length > 0 && !spec(t).modifies;
   const add = (t: string) => {
-    layout = autoPlace(layout, manifest, t, spec(t).variants[0], makeUid) ?? layout;
+    layout = autoPlaceWithHost(layout, manifest, t, spec(t).variants[0], makeUid) ?? layout;
   };
   const base = types.filter((t) => spec(t).base && placeable(t));
 
@@ -374,12 +374,10 @@ export function defaultLayout(
     desk = layout.items.find((it) => it.type === deskType);
   }
 
-  // Lo de base que puede ir encima va al escritorio (aunque prefiera el piso, como la planta),
-  // primero lo que solo va encima (la pantalla), para poner la silla frente a ello.
+  // Lo de base que prefiere ir encima (la pantalla) va al escritorio; lo que prefiere el piso (la
+  // planta) va al piso, para dejar un lugar libre en el escritorio a lo primero que se gane.
   const rest = base.filter((t) => t !== deskType);
-  const onTop = rest
-    .filter((t) => spec(t).place.includes('surface'))
-    .sort((a, b) => Number(spec(a).place[0] !== 'surface') - Number(spec(b).place[0] !== 'surface'));
+  const onTop = rest.filter((t) => spec(t).place[0] === 'surface');
   for (const t of onTop) {
     const slots = desk ? (spec(desk.type).surface?.slots.length ?? 0) : 0;
     let placed: RoomLayout | null = null;
@@ -422,4 +420,32 @@ export function defaultLayout(
   // Lo ganado, una vez cada tipo; la decoración espera en el inventario.
   types.filter((t) => ownedTypes.includes(t) && placeable(t) && !spec(t).base && !spec(t).decor).forEach(add);
   return layout;
+}
+
+/** Mesa que aparece con un objeto de superficie cuando ya no hay dónde ponerlo. */
+export const SPARE_HOST = 'sideTable';
+/** Como mucho estas mesitas aparecen solas: más llenarían el cuarto (la saturación visual molesta). */
+export const MAX_SPARE_HOSTS = 2;
+
+/**
+ * Como `autoPlace`, pero si un objeto que solo va sobre una superficie ya no cabe (los escritorios
+ * están llenos), pone primero una mesita (`SPARE_HOST`) en un lugar libre del piso y el objeto
+ * encima, como mucho `MAX_SPARE_HOSTS` mesitas por cuarto. Agregar no reacomoda nada de lo que ya
+ * está. `null` si no cabe: el objeto espera en el inventario.
+ */
+export function autoPlaceWithHost(
+  layout: RoomLayout,
+  catalog: Catalog,
+  type: string,
+  variant: string,
+  makeUid: () => string,
+): RoomLayout | null {
+  const direct = autoPlace(layout, catalog, type, variant, makeUid);
+  if (direct) return direct;
+  const spec = specOf(catalog, type);
+  const host = specOf(catalog, SPARE_HOST);
+  if (!spec || !host?.surface || spec.place.some((p) => p !== 'surface')) return null;
+  if (layout.items.filter((item) => item.type === SPARE_HOST).length >= MAX_SPARE_HOSTS) return null;
+  const withHost = autoPlace(layout, catalog, SPARE_HOST, host.variants[0], makeUid);
+  return withHost ? autoPlace(withHost, catalog, type, variant, makeUid) : null;
 }

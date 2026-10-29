@@ -246,13 +246,15 @@ describe('defaultLayout', () => {
     expect(new Set(ids.map((id) => JSON.stringify(make(id)))).size).toBeGreaterThan(10);
   });
 
-  it('escritorio contra la pared derecha con pantalla y planta, silla enfrente mirándolo', () => {
+  it('escritorio contra la pared derecha con pantalla, planta en el piso, silla enfrente mirándolo', () => {
     const l = make('casa', earnedTypes(manifest, []));
     const desk = l.items.find((it) => it.type === 'desk')!;
     expect(desk.place).toMatchObject({ on: 'floor', y: 0, rot: 0 });
     const x = (desk.place as { x: number }).x;
     expect(l.items.find((it) => it.type === 'monitor')!.place).toEqual(surface(desk.uid, 0));
-    expect(l.items.find((it) => it.type === 'plant')!.place).toEqual(surface(desk.uid, 1));
+    // La planta prefiere el piso: el segundo lugar del escritorio queda libre para lo primero que se gane.
+    expect(l.items.find((it) => it.type === 'plant')!.place.on).toBe('floor');
+    expect(l.items.some((it) => it.place.on === 'surface' && it.place.slot === 1)).toBe(false);
     expect(l.items.find((it) => it.type === 'chair')!.place).toEqual(floor(x, 1, 2));
     // Solo la base: la decoración espera en el inventario.
     expect(l.items.map((it) => it.type).sort()).toEqual(['chair', 'desk', 'monitor', 'plant']);
