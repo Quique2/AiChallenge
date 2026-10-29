@@ -24,3 +24,6 @@ Usage:
 - Today: quiet companion next to the desk; hidden when the desk is hidden.
 - Empty playbook: notebook, paired with guidance on what will appear here.
 All poses remain static and decorative; they never judge an outcome.
+
+Size: downscaled from 1254 px to 528 px (3x the largest use, 176 pt) with Lanczos
+to keep the app light; the art is unchanged.
