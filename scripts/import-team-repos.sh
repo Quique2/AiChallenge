@@ -8,7 +8,8 @@
 # `Mirror-Commit: <repo>@<sha>`. Así se ve qué hizo cada quien y la app no cambia de golpe:
 # se revisa la rama y se mezcla a main cuando está lista. Un commit ya importado no se repite.
 #
-# Uso: scripts/import-team-repos.sh [front|back|all]   (por defecto: all)
+# Uso: scripts/import-team-repos.sh [front|back|all] [rama]
+#   (por defecto: all y la rama principal del espejo; con rama, por ejemplo `front magda`)
 set -euo pipefail
 
 FRONT_REMOTE="${FRONT_REMOTE:-https://github.com/nina-col/AiChallengeFront.git}"
@@ -16,6 +17,7 @@ BACK_REMOTE="${BACK_REMOTE:-https://github.com/nina-col/AiChallengeBack.git}"
 
 ROOT="$(git rev-parse --show-toplevel)"
 STAMP="$(date +%Y%m%d-%H%M)"
+BRANCH="${2:-}"
 
 if [[ -n "$(git -C "$ROOT" status --porcelain)" ]]; then
   echo "Hay cambios sin commit en el monorepo; haz commit antes de importar." >&2
@@ -32,7 +34,11 @@ import_one() {
   tmp="$(mktemp -d)"
   trap 'rm -rf "$tmp"' RETURN
 
-  git clone --quiet -c core.autocrlf=false "$remote" "$tmp/mirror"
+  if [[ -n "$BRANCH" ]] && ! git ls-remote --exit-code --heads "$remote" "$BRANCH" >/dev/null; then
+    echo "[$name] $repo no tiene la rama $BRANCH."
+    return 0
+  fi
+  git clone --quiet -c core.autocrlf=false ${BRANCH:+--branch "$BRANCH"} "$remote" "$tmp/mirror"
 
   # Desde el último sync hacia acá; si nunca hubo sync, todo el historial.
   local last range
@@ -52,9 +58,9 @@ import_one() {
     return 0
   fi
 
-  local branch="equipo/$name-$STAMP" start n=2
+  local branch="equipo/$name${BRANCH:+-$BRANCH}-$STAMP" start n=2
   while git -C "$ROOT" show-ref --quiet --verify "refs/heads/$branch"; do
-    branch="equipo/$name-$STAMP-$n"
+    branch="equipo/$name${BRANCH:+-$BRANCH}-$STAMP-$n"
     n=$((n + 1))
   done
   start="$(git -C "$ROOT" rev-parse --abbrev-ref HEAD)"
@@ -84,5 +90,5 @@ case "${1:-all}" in
   front) import_one front apps/mobile "$FRONT_REMOTE" ;;
   back)  import_one back apps/api "$BACK_REMOTE" ;;
   all)   import_one front apps/mobile "$FRONT_REMOTE"; import_one back apps/api "$BACK_REMOTE" ;;
-  *)     echo "Uso: $0 [front|back|all]" >&2; exit 2 ;;
+  *)     echo "Uso: $0 [front|back|all] [rama]" >&2; exit 2 ;;
 esac
