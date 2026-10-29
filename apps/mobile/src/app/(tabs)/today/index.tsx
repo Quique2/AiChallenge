@@ -1,11 +1,12 @@
+import { QueryFeedback } from '@/components/query-feedback';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
+import { BeaverMascot } from '@/components/beaver-mascot';
 import { Button } from '@/components/button';
 import { DeskScene } from '@/components/desk/desk-scene';
 import { Group, GroupRow } from '@/components/group';
-import { Notice } from '@/components/notice';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -30,7 +31,7 @@ export default function Today() {
   const desk = useDesk();
   const [openedAt] = useState(() => Date.now());
   const lastHelped = playbook.data?.[0];
-  // Si la persona ocultó su progreso, la escena se queda sin objetos (no se borra nada).
+  // The companion belongs to the desk; hiding the desk hides both.
   const items = settings.showDesk ? desk.items : [];
   const askAboutRecap = settings.recapDay !== 'off' && openedAt - settings.recapSeenAt > RECAP_UNSEEN_MS;
 
@@ -51,6 +52,8 @@ export default function Today() {
       style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={trying.isRefetching} onRefresh={refresh} />}>
+      <QueryFeedback query={trying} />
+      <QueryFeedback query={playbook} />
       {trying.data?.length ? (
         <Group title={t.today.tryingTitle} footer={t.today.tryingFooter}>
           {trying.data.map((checkin, index) => (
@@ -69,12 +72,18 @@ export default function Today() {
         </Group>
       ) : null}
 
-      <View style={styles.desk}>
+      {settings.showDesk ? <View style={styles.desk}>
         <DeskScene
           items={items}
           interactive
           accessibilityLabel={t.desk.label(items.map((item) => t.desk.items[item]))}
         />
+        <View style={styles.companion}>
+          <BeaverMascot pose="coffee" size={72} />
+          <ThemedText type="callout" themeColor="textSecondary" style={styles.companionText}>
+            {t.today.mascotNote}
+          </ThemedText>
+        </View>
         <View style={styles.caption}>
           {settings.showDesk ? (
             <ThemedText type="footnote" themeColor="textSecondary" style={styles.shrink}>
@@ -87,7 +96,7 @@ export default function Today() {
             </ThemedText>
           ) : null}
         </View>
-      </View>
+      </View> : null}
 
       <View style={styles.prompt}>
         <ThemedText type="headline" style={styles.center}>
@@ -140,7 +149,6 @@ export default function Today() {
         </Group>
       ) : null}
 
-      {trying.isError ? <Notice text={t.common.offline} action={t.common.retry} onAction={refresh} /> : null}
     </ScrollView>
   );
 }
@@ -157,6 +165,12 @@ const styles = StyleSheet.create({
   desk: {
     gap: Spacing.two,
   },
+  companion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  companionText: { flex: 1 },
   caption: {
     flexDirection: 'row',
     flexWrap: 'wrap',

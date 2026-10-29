@@ -7,6 +7,7 @@ const list = (items: string[]) =>
 
 const en: Strings = {
   common: {
+    loading: 'Loading…',
     next: 'Next',
     close: 'Close',
     retry: 'Try again',
@@ -21,6 +22,7 @@ const en: Strings = {
     settings: 'Settings',
   },
   onboarding: {
+    mascotIntro: 'Your space can adapt to you, too.',
     welcomeTitle: 'SpaceEase',
     welcomeBody:
       'Find out what about your space is making work harder, try one adjustment, and keep what works for you.',
@@ -47,6 +49,7 @@ const en: Strings = {
     finish: 'Save and start',
   },
   today: {
+    mascotNote: 'Small changes, at your own pace.',
     promptTitle: 'Is something making work harder?',
     promptBody: "We'll look at your surroundings together and suggest one adjustment to try.",
     start: 'Check my surroundings',
@@ -109,6 +112,8 @@ const en: Strings = {
     },
   },
   checkin: {
+    reviewStep: (n: number, total: number) => `Review surroundings · ${n}/${total}`,
+    choosePhase: 'Choose an adjustment',
     title: 'Check my surroundings',
     step: (n: number, total: number) => `Step ${n} of ${total}`,
     taskTitle: 'What are you doing?',
@@ -250,6 +255,7 @@ const en: Strings = {
     anyPlace: 'No place',
   },
   request: {
+    restoreDraft: 'Restore my edited text',
     title: 'Adjustment request',
     hint: "Review it and change anything you like. It doesn't mention any diagnosis. You decide whether to send it and to whom.",
     includeData: "Include what I've recorded",
