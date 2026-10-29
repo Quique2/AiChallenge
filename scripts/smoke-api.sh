@@ -86,6 +86,86 @@ expect "[0]['adjustment']['id']" "$ADJUSTMENT" "ajuste guardado"
 check "progreso" 200 "${AUTH[@]}" "$BASE/v1/progress"
 expect "['tried'][0]" "$ADJUSTMENT" "ajuste probado en el progreso"
 
+# Memoria por lugar. OTHER_ID es un lugar que no es de esta cuenta.
+OTHER_ID="00000000-0000-4000-8000-000000000000"
+check "memoria del lugar" 200 "${AUTH[@]}" "$BASE/v1/spaces/$SPACE_ID/memory"
+expect "['space']['kind']" office "tipo de lugar en la memoria"
+expect "['trials']" 1 "pruebas aquí"
+expect "['known']" 1 "cosas que sabe aquí"
+expect "['stimuli'].__len__()" 2 "lo que molesta aquí"
+expect "['tried'][0]['adjustment']['id']" "$ADJUSTMENT" "probado aquí"
+expect "['tried'][0]['stimulus']" voices "estímulo de lo probado"
+expect "['tried'][0]['helped']" 1 "ayudó aquí"
+expect "['blocked'][0]['id']" "$SECOND" "no puedo aquí"
+check "memoria de un lugar ajeno → 404" 404 "${AUTH[@]}" "$BASE/v1/spaces/$OTHER_ID/memory"
+
+# "Usarlo otra vez": repeat <ajuste> [foco]
+repeat() {
+  echo "{\"space_id\":\"$SPACE_ID\",\"task\":\"reading\",\"feeling\":\"focus\",\"effort_before\":3,\"discomfort_before\":3,\"focus_stimulus\":\"${2:-voices}\",\"adjustment_id\":\"$1\"}"
+}
+check "usarlo otra vez" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins" -d "$(repeat "$ADJUSTMENT")"
+expect "['proposal']['reason']['kind']" chosen "motivo de lo elegido"
+expect "['proposal']['adjustment']['id']" "$ADJUSTMENT" "propone lo elegido"
+REPEAT_ID="$(json "['checkin']['id']")"
+check "usarlo otra vez: aceptar" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins/$REPEAT_ID/accept" -d '{}'
+check "usarlo otra vez: resultado" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins/$REPEAT_ID/outcome" -d '{"effort_after":3,"discomfort_after":3,"attribution":"no"}'
+expect "['here']['trials']" 2 "pruebas aquí al repetir"
+check "elegir un ajuste desconocido → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/checkins" -d "$(repeat nada)"
+check "elegir la comparación → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/checkins" -d "$(repeat no_change)"
+check "elegir lo que no se puede aquí → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/checkins" -d "$(repeat "$SECOND")"
+check "foco que el ajuste no atiende → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/checkins" -d "$(repeat "$ADJUSTMENT" too_cold)"
+check "memoria tras repetir" 200 "${AUTH[@]}" "$BASE/v1/spaces/$SPACE_ID/memory"
+expect "['tried'][0]['trials']" 2 "veces probado aquí"
+
+check "este lugar cambió" 204 -X POST "${AUTH[@]}" "$BASE/v1/spaces/$SPACE_ID/reset"
+check "cambiar un lugar ajeno → 404" 404 -X POST "${AUTH[@]}" "$BASE/v1/spaces/$OTHER_ID/reset"
+check "memoria tras el cambio" 200 "${AUTH[@]}" "$BASE/v1/spaces/$SPACE_ID/memory"
+expect "['trials']" 2 "el historial no se borra"
+expect "['trials_since_reset']" 0 "pruebas desde el cambio"
+expect "['space']['reset_at'] is not None" True "fecha del cambio"
+check "registrar tras el cambio" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins" -d "$CHECKIN"
+expect "['proposal']['reason']['kind'] != 'tried_here'" True "lo de antes del cambio ya no es de aquí"
+check "dejarlo" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins/$(json "['checkin']['id']")/abandon"
+
+# Cuarto del lugar. Con catalog/room.json se arma con su tamaño, cascarón y un objeto de base;
+# siempre lleva un tipo que el catálogo no conoce, que se guarda sin revisar.
+ROOM="$(python -c '
+import json, os, sys
+size, floor, wall, items = {"w": 5, "d": 5}, "oak", "teal", []
+if os.path.exists(sys.argv[1]):
+    c = json.load(open(sys.argv[1], encoding="utf-8"))
+    size, floor, wall = c["size"], c["shell"]["floors"][0], c["shell"]["walls"][0]
+    for kind, t in c["types"].items():
+        fw, fd = t["footprint"][::-1] if t["facings"][0] % 2 else t["footprint"]
+        if t.get("base") and "floor" in t["place"] and fw <= size["w"] and fd <= size["d"]:
+            place = {"on": "floor", "x": 0, "y": 0, "rot": t["facings"][0]}
+            items.append({"uid": "smoke001", "type": kind, "variant": t["variants"][0], "place": place})
+            break
+place = {"on": "floor", "x": size["w"] - 1, "y": size["d"] - 1, "rot": 0}
+items.append({"uid": "smoke002", "type": "smoke_future", "variant": "x", "place": place})
+window = {"wall": "right", "u": 0}
+print(json.dumps({"v": 1, "size": size, "shell": {"floor": floor, "wall": wall, "window": window}, "items": items, "pinned": []}))
+' "$(dirname "$0")/../apps/api/catalog/room.json")"
+ROOM_DUP="$(python -c 'import json, sys; l = json.loads(sys.argv[1]); l["items"].append(l["items"][-1]); print(json.dumps(l))' "$ROOM")"
+ROOM_V2="$(python -c 'import json, sys; l = json.loads(sys.argv[1]); l["v"] = 2; print(json.dumps(l))' "$ROOM")"
+check "cuarto sin crear → 404" 404 "${AUTH[@]}" "$BASE/v1/spaces/$SPACE_ID/room"
+check "crear cuarto" 200 -X PUT "${AUTH[@]}" "$BASE/v1/spaces/$SPACE_ID/room" -d "{\"revision\":0,\"layout\":$ROOM}"
+expect "['revision']" 1 "revisión al crear"
+check "leer cuarto" 200 "${AUTH[@]}" "$BASE/v1/spaces/$SPACE_ID/room"
+expect "['revision']" 1 "revisión leída"
+expect "['layout']['items'][-1]['type']" smoke_future "se conserva un tipo desconocido"
+check "guardar cuarto" 200 -X PUT "${AUTH[@]}" "$BASE/v1/spaces/$SPACE_ID/room" -d "{\"revision\":1,\"layout\":$ROOM}"
+expect "['revision']" 2 "revisión al guardar"
+check "revisión vieja → 409" 409 -X PUT "${AUTH[@]}" "$BASE/v1/spaces/$SPACE_ID/room" -d "{\"revision\":1,\"layout\":$ROOM}"
+expect "['revision']" 2 "revisión actual en el conflicto"
+check "cuarto inválido → 422" 422 -X PUT "${AUTH[@]}" "$BASE/v1/spaces/$SPACE_ID/room" -d "{\"revision\":2,\"layout\":$ROOM_DUP}"
+expect "['error']" invalid_layout "código de cuarto inválido"
+expect "['problems'][-1].endswith('uid: duplicate')" True "problema del cuarto"
+check "cuarto de una app más nueva → 422" 422 -X PUT "${AUTH[@]}" "$BASE/v1/spaces/$SPACE_ID/room" -d "{\"revision\":2,\"layout\":$ROOM_V2}"
+expect "['error']" update_app "pide actualizar la app"
+check "cuarto de un lugar ajeno → 404" 404 "${AUTH[@]}" "$BASE/v1/spaces/$OTHER_ID/room"
+check "guardar en un lugar ajeno → 404" 404 -X PUT "${AUTH[@]}" "$BASE/v1/spaces/$OTHER_ID/room" -d "{\"revision\":0,\"layout\":$ROOM}"
+
 check "varios sin foco → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/checkins" \
   -d '{"task":"writing","feeling":"drained","effort_before":3,"discomfort_before":3,"observations":[{"stimulus":"voices","response":"yes"},{"stimulus":"too_cold","response":"yes"}]}'
 check "sin estímulo claro" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins" \
