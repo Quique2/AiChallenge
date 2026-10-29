@@ -147,6 +147,8 @@ function reasonText(proposal: Proposal, t: ReturnType<typeof useT>, stimulus: st
       return t.proposal.triedHere(reason.helped, reason.trials);
     case 'tried_elsewhere':
       return t.proposal.triedElsewhere(reason.helped, reason.trials);
+    case 'chosen':
+      return t.proposal.chosen;
   }
 }
 

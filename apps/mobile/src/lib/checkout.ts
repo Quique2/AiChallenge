@@ -32,6 +32,7 @@ export function useSaveOutcome(id: string) {
       queryClient.invalidateQueries({ queryKey: keys.checkins });
       queryClient.invalidateQueries({ queryKey: keys.playbook });
       queryClient.invalidateQueries({ queryKey: keys.progress });
+      queryClient.invalidateQueries({ queryKey: keys.memories });
       router.push({ pathname: '/checkout/[id]/result', params: { id } });
     },
   });

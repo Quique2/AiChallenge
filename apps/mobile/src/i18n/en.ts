@@ -72,6 +72,29 @@ const en: Strings = {
     recapKeep: 'Yes, keep it',
     recapStop: 'No more, thanks',
   },
+  place: {
+    title: 'What I know about this place',
+    counter: (trials: number, known: number) =>
+      `Here: ${trials} ${trials === 1 ? 'trial' : 'trials'} · ${known} ${known === 1 ? 'thing you know' : 'things you know'}`,
+    empty: "No trials here yet. Every trial you finish in this place is saved here, whether it helped or not.",
+    stimuliTitle: 'What tends to bother you here',
+    times: (n: number) => `${n} ${times(n)}`,
+    triedTitle: 'What you tried here',
+    triedFooter: "What didn't help counts too: now you know what isn't worth repeating.",
+    evidence: (helped: number, trials: number) => `helped ${helped} of ${trials} ${times(trials)}`,
+    useAgain: 'Use it again',
+    blockedTitle: "Can't be done here",
+    changedTitle: 'Has this place changed?',
+    changedBody:
+      "If you moved your desk or the light changed, suggestions can start over here. What you already tried isn't deleted.",
+    changedOn: (date: string) => `You started over here on ${date}.`,
+    changed: 'This place changed',
+    changedConfirmTitle: 'Start over in this place?',
+    changedConfirmBody: "Suggestions here will no longer take earlier trials into account. Nothing is deleted.",
+    changedConfirm: 'Start over',
+    placesTitle: 'Your places',
+    open: 'See what I know about this place',
+  },
   recap: {
     title: 'Your week',
     hint: 'The last 7 days, always in the same order.',
@@ -113,6 +136,7 @@ const en: Strings = {
   },
   checkin: {
     reviewStep: (n: number, total: number) => `Review surroundings · ${n}/${total}`,
+    repeatStep: (n: number, total: number) => `Use it again · ${n}/${total}`,
     choosePhase: 'Choose an adjustment',
     title: 'Check my surroundings',
     step: (n: number, total: number) => `Step ${n} of ${total}`,
@@ -184,6 +208,7 @@ const en: Strings = {
     firstTry: (stimulus: string) =>
       `A first idea for: ${stimulus.toLowerCase()}. We don't know yet whether it works for you.`,
     exploring: "Let's try something new to learn what else helps you.",
+    chosen: 'You chose it from what you already know about this place.',
     comparison: 'Now and then we compare with a moment without changes.',
     triedHere: (helped: number, trials: number) =>
       `Here, for this task, it helped ${helped} of ${trials} ${times(trials)}.`,

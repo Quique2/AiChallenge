@@ -9,6 +9,7 @@ import type {
   NewCheckin,
   OutcomeResult,
   PhotoScanResult,
+  PlaceMemory,
   PlaybookEntry,
   Progress,
   Response,
@@ -116,6 +117,9 @@ export const api = {
 
   playbook: () => request<PlaybookEntry[]>('/v1/playbook'),
   progress: () => request<Progress>('/v1/progress'),
+  memory: (spaceId: string) => request<PlaceMemory>(`/v1/spaces/${spaceId}/memory`),
+  /** "Este lugar cambió": el motor solo usa las pruebas de aquí desde ahora. No borra nada. */
+  resetSpace: (spaceId: string) => request<void>(`/v1/spaces/${spaceId}/reset`, { method: 'POST' }),
 
   /** La IA tarda ~10 s en mirar la foto: este pedido tiene su propio tiempo límite. */
   scanPhoto: (imageBase64: string, task: string, audio: string[]) =>

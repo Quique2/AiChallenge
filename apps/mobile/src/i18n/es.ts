@@ -77,6 +77,29 @@ const es = {
     recapKeep: 'Sí, seguir',
     recapStop: 'Ya no, gracias',
   },
+  place: {
+    title: 'Lo que sé de este lugar',
+    counter: (trials: number, known: number) =>
+      `Aquí: ${trials} ${trials === 1 ? 'prueba' : 'pruebas'} · ${known} ${known === 1 ? 'cosa que sabes' : 'cosas que sabes'}`,
+    empty: 'Todavía no hay pruebas aquí. Cada prueba que termines en este lugar se guarda aquí, haya ayudado o no.',
+    stimuliTitle: 'Lo que suele molestar aquí',
+    times: (n: number) => `${n} ${times(n)}`,
+    triedTitle: 'Lo que probaste aquí',
+    triedFooter: 'Lo que no ayudó también cuenta: así ya sabes qué no hace falta repetir.',
+    evidence: (helped: number, trials: number) => `ayudó ${helped} de ${trials} ${times(trials)}`,
+    useAgain: 'Usarlo otra vez',
+    blockedTitle: 'No se puede aquí',
+    changedTitle: '¿Cambió este lugar?',
+    changedBody:
+      'Si moviste el escritorio o cambió la luz, las sugerencias pueden empezar de nuevo aquí. Lo que ya probaste no se borra.',
+    changedOn: (date: string) => `Empezaste de nuevo aquí el ${date}.`,
+    changed: 'Este lugar cambió',
+    changedConfirmTitle: '¿Empezar de nuevo en este lugar?',
+    changedConfirmBody: 'Las sugerencias de aquí ya no tomarán en cuenta las pruebas de antes. Nada se borra.',
+    changedConfirm: 'Empezar de nuevo',
+    placesTitle: 'Tus lugares',
+    open: 'Ver lo que sé de este lugar',
+  },
   recap: {
     title: 'Tu semana',
     hint: 'Los últimos 7 días, siempre en el mismo orden.',
@@ -119,6 +142,7 @@ const es = {
   },
   checkin: {
     reviewStep: (n: number, total: number) => `Revisar entorno · ${n}/${total}`,
+    repeatStep: (n: number, total: number) => `Usarlo otra vez · ${n}/${total}`,
     choosePhase: 'Elegir ajuste',
     title: 'Revisar mi entorno',
     step: (n: number, total: number) => `Paso ${n} de ${total}`,
@@ -190,6 +214,7 @@ const es = {
     firstTry: (stimulus: string) =>
       `Es una idea para empezar con: ${stimulus.toLowerCase()}. Todavía no sabemos si a ti te funciona.`,
     exploring: 'Probemos algo nuevo para aprender qué más te sirve.',
+    chosen: 'Lo elegiste de lo que ya sabes de este lugar.',
     comparison: 'De vez en cuando comparamos con un momento sin cambios.',
     triedHere: (helped: number, trials: number) =>
       `Aquí, en esta tarea, ayudó ${helped} de ${trials} ${times(trials)}.`,
