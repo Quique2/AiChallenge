@@ -8,7 +8,7 @@ import { hitTest } from '@/components/room/hit';
 import { artToCell, pickScale, roomArtSize } from '@/components/room/iso';
 import { ATLAS, MANIFEST } from '@/components/room/manifest';
 import { RoomCanvas } from '@/components/room/room-canvas';
-import type { RoomLayout } from '@/components/room/types';
+import type { ItemPlace, RoomLayout } from '@/components/room/types';
 import { useTheme } from '@/hooks/use-theme';
 import { useFeedback, useMotionLevel } from '@/lib/feedback';
 
@@ -33,6 +33,14 @@ type RoomViewProps = {
   onPressCell?: (cell: { x: number; y: number }) => void;
   /** Al aparecer, la onda del monitor se calma (el momento firma). */
   settle?: boolean;
+  /** Objeto recién puesto en el cuarto (lo ganado al terminar una prueba): entra con su animación. */
+  entering?: string | null;
+  /** Al montar, el cuarto se arma con su animación de entrada (según el nivel de movimiento). */
+  intro?: boolean;
+  /** Modo de edición: casillas válidas del objeto elegido y arrastrar para mover. */
+  editing?: boolean;
+  /** Al soltar lo que se arrastró en un lugar válido. */
+  onDrop?: (uid: string, place: ItemPlace) => void;
   accessibilityLabel: string;
 };
 
