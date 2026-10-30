@@ -161,7 +161,7 @@ const tap = useTapGesture({ onDeactivate: (e) => { 'worklet'; scheduleOnRN(selec
 ```
 
   En la v3, `onStart` pasa a `onActivate`, `onEnd` pasa a `onDeactivate`, y `onChange` se integra en `onUpdate`. La configuración acepta `runOnJS`, `enabled` y `hitSlop`.
-- **La sala de cada espacio se crea cuando hace falta.** Si `GET /v1/spaces/{id}/room` devuelve 404, el cliente arma una sala por defecto de forma determinista (semilla = id del espacio), con el escritorio, la silla y la planta de base más los objetos ganados en celdas libres. El primer `PUT` la guarda.
+- **La sala de cada espacio se crea cuando hace falta.** Si `GET /v1/spaces/{id}/room` devuelve 404, el cliente arma una sala por defecto de forma determinista (semilla = id del espacio), con el escritorio, la silla y la planta de base más los objetos ganados en celdas libres. El primer `PUT` la guarda: un cambio de la persona o el primer objeto que gana ahí (`placeEarnedInRoom`, con lo que ya veía más el objeto nuevo, para no reacomodar nada). Desde entonces, lo que gane en otros espacios espera en "Tus cosas".
 - **Objeto nuevo.** Cuando termina una prueba en el espacio S, su objeto aparece en una celda libre de la sala de S con la misma entrada de hoy (cae 2 px a saltos, o un fundido, según el nivel). En las otras salas queda disponible en el inventario. Lo ganado es de la persona, no de una sala: cada tipo se puede poner en todas sus salas.
 - **Reglas de producto (DESIGN.md §6 y §11) que el editor debe respetar:**
   - El inventario muestra solo lo que la persona tiene: sin siluetas bloqueadas ni "3 de 40".

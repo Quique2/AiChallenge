@@ -92,8 +92,8 @@ export const INTRO_MAX_MS = 600;
 /** Entrada en modo tranquilo: el cuarto entero aparece con un fundido. */
 export const CALM_INTRO_MS = 200;
 
-/** Lo recién ganado, con detalles: su sombra se enciende en 2 saltos y él cae de 8 px a 0 en 4. */
-export const ENTER_DROP = 8;
+/** Lo recién ganado, con detalles: su sombra se enciende en 2 saltos y él cae de 5 px a 0 en 4 (≈ 10 pt, DESIGN.md §5). */
+export const ENTER_DROP = 5;
 export const ENTER_STEPS = 4;
 export const ENTER_SHADOW_STEPS = 2;
 export const ENTER_MS = 320;
@@ -321,7 +321,7 @@ export function planIntro(drawList: readonly DrawItem[], level: Level, now: numb
 
 /**
  * Lo recién ganado aparece (igual haya ayudado o no). Con detalles, su sombra se enciende en 2
- * saltos mientras él cae de 8 px a 0 en 4 y toca el piso a los `ENTER_LAND_MS`. Tranquilo: fundido
+ * saltos mientras él cae de 5 px a 0 en 4 y toca el piso a los `ENTER_LAND_MS`. Tranquilo: fundido
  * con 2 px de caída. Reducido: fundido.
  */
 export function planEnter(uid: string, level: Level, now: number): Anim[] {

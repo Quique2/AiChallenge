@@ -280,12 +280,11 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 
 ## 9. Decisiones pendientes
 
-- **Revisión en equipo de la propuesta del cuarto isométrico** (sección 10) antes de escribir código.
 - **Correo de contacto** del equipo para el aviso de privacidad (lo exige la LFPDPPP y conviene para Apple).
 - **Contacto en Specialisterne** para las pruebas con usuarios y el co-diseño de la iteración 5.
 - Si el piloto en TestFlight cuenta como investigación con personas, ¿hace falta consentimiento informado y un comité de ética?
 
-## 10. Propuesta en revisión: cuarto isométrico y memoria por lugar
+## 10. Cuarto isométrico y memoria por lugar
 
 **Estado:** implementada el 29 de octubre (fases 0 a 3 y parte de la 4). Reglas de diseño en `docs/DESIGN.md` §12. Falta probar Skia en un iPhone real (fase 0) con la build 1.4.0 y, con usuarios, el cuarto frente a la lista.
 

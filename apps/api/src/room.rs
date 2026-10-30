@@ -8,8 +8,7 @@
 //! revisa la forma del acomodo.
 //! Diseño: docs/research/research_notes/Escritorio isometrico/tecnica.md (§6–§8).
 //!
-//! Diferencias con la app: aquí el tamaño tiene que ser el del catálogo (la app acepta de 1 a
-//! `MAX_SIZE` por lado), un acomodo demasiado grande no se revisa objeto por objeto, y un lugar
+//! Diferencias con la app: un acomodo demasiado grande no se revisa objeto por objeto, y un lugar
 //! con campos de más o con números que no son enteros de i64 (`1.0`, `1e30`) es `invalid`.
 
 use std::{
@@ -366,12 +365,7 @@ pub fn validate(
         Some(v) if v > LAYOUT_VERSION as f64 => return fail(UNSUPPORTED),
         _ => return fail("v: invalid"),
     }
-    // El tamaño es el del catálogo: el arte de las paredes y el piso se hizo para él.
-    let Some(size) = raw
-        .get("size")
-        .and_then(parse_size)
-        .filter(|size| catalog.is_none_or(|c| c.size == *size))
-    else {
+    let Some(size) = raw.get("size").and_then(parse_size) else {
         return fail("size: invalid");
     };
     let Some(shell) = raw.get("shell").and_then(parse_shell) else {
@@ -805,16 +799,10 @@ mod tests {
         assert!(cases >= 5, "solo hubo {cases} casos");
     }
 
-    /// Casos de la app que aquí dan otra cosa, con lo que dan. El servidor solo acepta el tamaño
-    /// del catálogo (5 × 5, el único que arma la app); la app acepta de 1 a `MAX_SIZE` por lado.
-    /// Si un lado cambia su regla, `run_cases` avisa para quitar el caso de aquí.
-    const DIFFER_FROM_APP: [(&str, &[&str]); 1] = [("valid-rotated.json", &["size: invalid"])];
-
-    /// Los casos de la app (`validateLayout`) dan aquí los mismos problemas, en el mismo orden,
-    /// salvo `DIFFER_FROM_APP`.
+    /// Los casos de la app (`validateLayout`) dan aquí los mismos problemas, en el mismo orden.
     #[test]
     fn app_fixture_cases() {
-        let cases = run_cases(&app_fixtures(), &DIFFER_FROM_APP);
+        let cases = run_cases(&app_fixtures(), &[]);
         assert!(cases >= 5, "solo hubo {cases} casos de la app");
     }
 
@@ -916,10 +904,7 @@ mod tests {
         assert_eq!(problems(&sized, None, &[]), ["size: invalid"]);
         sized["size"] = json!({ "w": 6, "d": 5 });
         assert!(problems(&sized, None, &[]).is_empty());
-        assert_eq!(
-            problems(&sized, Some(&fixture_catalog()), &[]),
-            ["size: invalid"]
-        );
+        assert!(problems(&sized, Some(&fixture_catalog()), &[]).is_empty());
     }
 
     #[test]

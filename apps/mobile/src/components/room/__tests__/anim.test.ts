@@ -206,10 +206,10 @@ describe('entrada del cuarto', () => {
 });
 
 describe('lo recién ganado', () => {
-  it('con detalles: la sombra en 2 saltos, cae 8 → 0 en 4 y toca el piso a los ENTER_LAND_MS', () => {
+  it('con detalles: la sombra en 2 saltos, cae 5 → 0 en 4 y toca el piso a los ENTER_LAND_MS', () => {
     const [a] = planEnter('newitem0', 'detailed', T0);
     const poses = [0, 80, 160, 240].map((t) => poseAt(a, t)!);
-    expect(poses.map((p) => p.lift)).toEqual([8, 6, 4, 2]);
+    expect(poses.map((p) => p.lift)).toEqual([5, 3, 2, 1]);
     expect(poses.map((p) => p.alpha)).toEqual([0.25, 0.5, 0.75, 1]);
     expect(poses.map((p) => p.shadow)).toEqual([0.5, 0.5, 1, 1]);
     let landed = 0;

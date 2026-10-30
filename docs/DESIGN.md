@@ -44,18 +44,18 @@ Hay tres niveles de movimiento (`useMotionLevel` en `src/lib/feedback.ts`). La p
 | Nivel | Cuándo | Qué se mueve |
 |---|---|---|
 | **Reducido** | "Reducir movimiento" de iOS (en vivo) o "Siempre reducido" en Ajustes. Gana siempre | Solo fundidos. Nada se repite ni se desplaza. Sin franja de análisis ni columnas de nivel |
-| **Tranquilo** (por defecto) | Sin "Animaciones con detalles" | Movimiento breve y con propósito: barra de pasos, fundidos, la franja al analizar la foto y la onda del monitor que se calma |
-| **Con detalles** | "Animaciones con detalles" en Ajustes o en el aviso de Hoy | Además: la escena se mueve un rato al aparecer o al tocarla, el objeto nuevo "cae" dos pixeles y se enciende a saltos (sin partículas ni confeti), los marcadores se encienden en orden y la palomita aparece con un fundido |
+| **Tranquilo** (por defecto) | Sin "Animaciones con detalles" | Movimiento breve y con propósito: barra de pasos, fundidos, la franja al analizar la foto y la onda del monitor que se calma. En el cuarto, lo que mueve la persona se desliza y lo ganado aparece con una caída corta |
+| **Con detalles** | "Animaciones con detalles" en Ajustes o en el aviso de Hoy | Además: la escena se mueve un rato al aparecer o al tocarla, el objeto nuevo "cae" unos 10 pt y se enciende a saltos (sin partículas ni confeti), los marcadores se encienden en orden y la palomita aparece con un fundido |
 
 | Regla | Valor |
 |---|---|
 | Lo frecuente no se anima | Cambiar de pestaña, el teclado, elegir una opción (en modo tranquilo) y las transiciones de pantalla, que son las nativas |
 | Al tocar | Cambio de opacidad o de fondo inmediato; sin "aplastar" el botón |
 | Curvas | Salida suave (`Easing.bezier(0.23, 1, 0.32, 1)`). Con detalles, `Easing.steps(n)`: las cosas se encienden a saltos, como pixeles. Nunca `ease-in`, rebotes ni elásticos |
-| Entradas | Fundidos. Nada crece desde cero ni se desliza. Los marcadores de la foto, con detalles, se encienden con 40 ms entre uno y otro (menos de 300 ms en total) |
-| Duración | Tranquilo: 250 ms o menos. Con detalles: hasta 450 ms por animación y una sola vez por acción |
+| Entradas | Fundidos; en el cuarto, con una caída corta y sin rebote (sección 12). Nada crece desde cero ni se desliza. Los marcadores de la foto, con detalles, se encienden con 40 ms entre uno y otro (menos de 300 ms en total) |
+| Duración | Tranquilo: 250 ms o menos. Con detalles: hasta 450 ms por animación y una sola vez por acción. La entrada del cuarto, objeto por objeto, termina en 600 ms o menos |
 | Lo que se repite | La franja de la foto da como mucho 3 pasadas (3.6 s) y se queda quieta. La escena, con detalles, se mueve 5 s al aparecer o al tocarla: un solo elemento a la vez (planta, vapor, ventilador), con pausas. Se detiene antes de 5 s (WCAG 2.2.2) y al salir de la pantalla. Nada de oscilaciones continuas (las de ~0.2 Hz marean, según la guía de Apple) |
-| Desplazamiento | Como mucho 2 pixeles de la escena (≈ 10 pt). Nada cruza la pantalla ni hace zoom de pantalla completa (WCAG 2.3.3) |
+| Desplazamiento | Como mucho ≈ 10 pt: 2 pixeles de la escena 2D, 5 de arte en el cuarto. Solo lo que mueve la persona va más lejos, hasta donde lo mandó. Nada cruza la pantalla ni hace zoom de pantalla completa (WCAG 2.3.3) |
 | Momento firma | La onda del monitor pasa de ruidosa a tranquila en 3 cuadros (300 ms). El sonido y la vibración llegan en el cuadro en que queda tranquila, nunca antes |
 | Vibración | **Apagada por defecto.** Si se activa, solo al confirmar, una vez por acción y nunca como única señal |
 | Sonido | **Apagado por defecto.** Ver la sección 11 |
@@ -158,9 +158,22 @@ Cada lugar guardado tiene un cuarto isométrico en pixel art (arte propio: `docs
 - **Nunca es la única vista.** "Cuarto / Lista" muestra la misma información; la lista siempre está debajo del cuarto, en texto.
 - **Tocar un objeto dice qué es y qué se sabe de él** ("Probado 3 veces aquí; ayudó 2"), igual para lo que ayudó y lo que no. La app nunca destaca nada por su cuenta: el corcho "Lo que me sirve aquí" lo llena solo la persona.
 - **La persona decide dónde va cada cosa.** La app solo agrega lo recién ganado en un lugar libre razonable (si el escritorio está lleno, con una mesita, como mucho 2 por cuarto); nunca mueve lo que ya está. Lo que no cabe espera en "Tus cosas".
-- **Sin arrastrar** (WCAG 2.5.7): se elige un objeto tocándolo o desde la lista "En el cuarto", y se mueve con las flechas o tocando la casilla destino. Lo que no se puede se dice en texto ("Ese lugar está ocupado"). La cámara es fija, sin zoom.
+- **El primer objeto ganado guarda el cuarto.** Mientras un lugar no tiene cuarto guardado, se arma uno por defecto, igual en cualquier teléfono. Al terminar ahí la primera prueba se guarda lo que la persona ya veía más el objeto nuevo, para que nada se reacomode. Desde entonces, lo que gane en otros lugares espera en "Tus cosas" de este.
+- **Nunca hace falta arrastrar** (WCAG 2.5.7): se elige un objeto tocándolo o desde la lista "En el cuarto", y se mueve con las flechas o tocando la casilla destino. Arrastrar es un atajo opcional: se mantiene presionado unos 150 ms, sin competir con el scroll, y con el lector de pantalla se apaga. Lo que no se puede se dice en texto ("Ese lugar está ocupado"). La cámara es fija, sin zoom.
 - **Se guarda solo al confirmar** ("Guardar cambios"); "Deshacer" y "Cancelar" siempre están. Si otra pantalla guardó antes, se avisa y no se pisa.
-- **Movimiento:** el mismo de la sección 5. Reducido: quieto. Tranquilo: la onda del monitor se calma al abrir. Con detalles: además, un objeto a la vez (ventilador, vapor, el castor que saluda) durante 5 s como mucho.
+- **Movimiento:** las reglas de la sección 5, en enteros de pixel de arte, sin rebote y una sola vez por acción. El reloj solo corre mientras algo se mueve y se pausa fuera de la pantalla.
+
+  | Acción | Reducido | Tranquilo | Con detalles |
+  |---|---|---|---|
+  | Abrir el cuarto | Nada | Fundido de 200 ms | Cada objeto cae 4 px en 3 saltos (180 ms), de atrás hacia adelante; 600 ms o menos en total |
+  | Llega un objeto ganado | Fundido de 150 ms | Fundido de 200 ms y 2 px de caída | Su sombra se enciende y él cae 5 px en 4 saltos (320 ms) |
+  | Mover | Al instante | Se desliza 120 ms | Sube 2 px, avanza por la rejilla (240 ms o menos) y baja |
+  | Girar | Al instante | Al instante | Sube 1 px, cambia y baja (100 ms) |
+  | Guardar o sacar de "Tus cosas" | Al instante | Fundido de 150 ms | Sube 2 px y se apaga en 3 saltos (180 ms) |
+  | En reposo | Quieto | La onda del monitor se calma al abrir | Además, un objeto a la vez durante 5 s como mucho: ventilador, vapor, planta o castor |
+  | Arrastrar | Sin levantar | Levantado 2 px | Levantado 4 px |
+
+  Al arrastrar, el objeto salta de casilla en casilla, sin inercia, con su sombra y la casilla destino; si no se puede soltar ahí, la casilla cambia de forma, no solo de color, y el motivo se dice en texto. El tono del resultado suena cuando el objeto toca el piso, nunca antes.
 - **Nada se pierde ni se deteriora:** no hay plantas que se secan ni mascotas que piden atención. El castor solo está ahí.
 - **"Este lugar cambió"** reinicia las sugerencias de ese lugar sin borrar la historia.
 
