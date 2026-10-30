@@ -206,11 +206,18 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 | 2 | ✅ 26 oct | **Escaneo con foto y sonido:** consentimientos aparte, audio en el teléfono, foto pixelada en el teléfono y Claude Opus 5.5 con hipótesis que la persona confirma. App 1.2.0 + API 0.3.0 |
 | 3 | ✅ 26 oct | **Experiencia y retención sin presión:** arreglos del permiso del micrófono y de los botones fuera de la pantalla; "Tu escritorio" (un objeto por cada prueba terminada, haya ayudado o no, que nunca se pierde); tres niveles de movimiento; sonidos suaves opcionales; resumen semanal opcional; plan "si…, entonces…". App 1.3.0 + API 0.4.0 |
 | 4 | ✅ 29 oct | **Cuarto isométrico y memoria por lugar** (sección 10): memoria por lugar en el motor, "Lo que sé de este lugar", "Usarlo otra vez", cuarto decorable por lugar con editor accesible y el castor en pixel art. App 1.4.0 + API 0.5.0 |
+| 4.1 | ✅ 30 oct | **Animaciones del cuarto:** entrada, llegada de lo ganado, mover, girar, guardar y reposo por nivel de movimiento; arrastre opcional en el editor; el cuarto en Hoy, resultado, Listo, semana y Ajustes; integración de `expo-speech` y los cambios de Magda en una build. App 1.5.0 + API 0.5.1 |
 | 5 | | Redacción con Claude Haiku 5.5 (solicitud y tarjetas), "¿qué puede pedirte tu empresa?" por país y tarjetas de aprendizaje |
 | 6 | | Usuario demo con historial sembrado, revisión de accesibilidad con VoiceOver y texto grande, y enlace público de TestFlight |
 | 7 | | **Validación** con 3–5 personas, idealmente vía Specialisterne y con co-diseño pagado |
 | 8 | | **Pitch:** guion de demo, métricas reales, limitaciones declaradas (tabla del informe) y video de respaldo |
 | ‖ | | **Modelo de audio** (Quique, GPU) sobre niveles por banda → ONNX; se conecta en la iteración 2 |
+
+### Checklist de la iteración 4.1
+
+- [x] Arte: casillas de edición, sombras y cuadros de reposo; animaciones puras con pruebas (reloj, poses, arrastre)
+- [x] Revisión contra cuadros renderizados con los módulos reales y contra las reglas de `DESIGN.md`
+- [ ] Probar en un iPhone la build 1.5.0: nitidez, arrastre dentro del scroll, VoiceOver, Reducir movimiento y el ciclo completo de ganar un objeto
 
 ### Checklist de la iteración 4
 
@@ -286,7 +293,7 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 
 ## 10. Cuarto isométrico y memoria por lugar
 
-**Estado:** implementada el 29 de octubre (fases 0 a 3 y parte de la 4). Reglas de diseño en `docs/DESIGN.md` §12. Falta probar Skia en un iPhone real (fase 0) con la build 1.4.0 y, con usuarios, el cuarto frente a la lista.
+**Estado:** implementada (fases 0 a 3 el 29 de octubre; animaciones y arrastre de la fase 4 el 30). Reglas de diseño en `docs/DESIGN.md` §12. Falta probar Skia en un iPhone real (fase 0) con la build 1.5.0 y, con usuarios, el cuarto frente a la lista.
 
 - Investigación: [diseño y evidencia](research/research_notes/Escritorio%20isometrico/diseno.md) y [técnica](research/research_notes/Escritorio%20isometrico/tecnica.md).
 - Prototipo: [`prototipo/iso_proto.py`](research/research_notes/Escritorio%20isometrico/prototipo/).
