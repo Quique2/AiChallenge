@@ -3,9 +3,14 @@
 //! Espeja `apps/mobile/src/components/room/types.ts`. La app valida antes de guardar y el servidor
 //! vuelve a validar con las mismas reglas y los mismos códigos de problema que `validateLayout`
 //! (`layout.ts` y `occupancy.ts`), así los dos lados corren los mismos casos de prueba
-//! (`catalog/room-fixtures`). El catálogo de objetos (`catalog/room.json`) lo genera
-//! `docs/brand/draw_room.py`; si todavía no existe, solo se revisa la forma del acomodo.
+//! (`catalog/room-fixtures`, y en `mobile/` una copia de los de la app). El catálogo de objetos
+//! (`catalog/room.json`) lo genera `docs/brand/draw_room.py`; si todavía no existe, solo se
+//! revisa la forma del acomodo.
 //! Diseño: docs/research/research_notes/Escritorio isometrico/tecnica.md (§6–§8).
+//!
+//! Diferencias con la app: aquí el tamaño tiene que ser el del catálogo (la app acepta de 1 a
+//! `MAX_SIZE` por lado), un acomodo demasiado grande no se revisa objeto por objeto, y un lugar
+//! con campos de más o con números que no son enteros de i64 (`1.0`, `1e30`) es `invalid`.
 
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
@@ -161,9 +166,10 @@ impl TypeSpec {
         if rot % 2 == 0 { (w, d) } else { (d, w) }
     }
 
-    /// La base y la decoración se tienen desde el primer día; lo demás, al probar uno de sus ajustes.
-    fn earned(&self, owned: &[String]) -> bool {
-        self.base || self.decor || self.adjustments.iter().any(|a| owned.contains(a))
+    /// La base y la decoración se tienen desde el primer día; lo demás, al probar uno de sus
+    /// ajustes. `tried`: ids de ajustes probados, como en `validate`.
+    fn earned(&self, tried: &[String]) -> bool {
+        self.base || self.decor || self.adjustments.iter().any(|a| tried.contains(a))
     }
 }
 
@@ -343,12 +349,13 @@ fn spec_of<'c>(catalog: Option<&'c RoomCatalog>, kind: &str) -> Option<&'c TypeS
 }
 
 /// Revisa un acomodo tal como llega (JSON sin tipar) y lo devuelve normalizado, o todos sus
-/// problemas. `owned`: ajustes que la persona ya probó (lo mismo que `GET /v1/progress`).
-/// Sin catálogo de objetos solo se revisa la forma.
+/// problemas. `tried`: ids de los ajustes que la persona ya probó hasta el final (el `tried` de
+/// `GET /v1/progress`), no tipos de objeto: los objetos que tiene salen de ahí, como con
+/// `earnedTypes` en la app. Sin catálogo de objetos solo se revisa la forma.
 pub fn validate(
     raw: &Value,
     catalog: Option<&RoomCatalog>,
-    owned: &[String],
+    tried: &[String],
 ) -> Result<RoomLayout, Vec<String>> {
     let fail = |code: &str| Err(vec![code.to_owned()]);
     if !raw.is_object() {
@@ -424,7 +431,7 @@ pub fn validate(
             if !spec.variants.iter().any(|v| v == variant) {
                 out.push(format!("items[{i}].variant: unknown-variant"));
             }
-            if !spec.earned(owned) {
+            if !spec.earned(tried) {
                 out.push(format!("items[{i}].type: not-owned"));
             }
         }
@@ -660,7 +667,11 @@ fn settle(
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, path::Path};
+    use std::{
+        collections::BTreeSet,
+        fs,
+        path::{Path, PathBuf},
+    };
 
     use serde_json::json;
 
@@ -673,14 +684,24 @@ mod tests {
         ))
     }
 
-    fn fixture_catalog() -> RoomCatalog {
-        let json = fs::read_to_string(fixtures().join("catalog.json")).unwrap();
+    /// Copia de los casos de la app (`apps/mobile/src/components/room/__tests__/fixtures/layouts`),
+    /// con su propio `catalog.json`.
+    fn app_fixtures() -> PathBuf {
+        fixtures().join("mobile")
+    }
+
+    fn catalog_in(dir: &Path) -> RoomCatalog {
+        let json = fs::read_to_string(dir.join("catalog.json")).unwrap();
         serde_json::from_str(&json).expect("catalog.json de prueba")
     }
 
-    fn problems(layout: &Value, catalog: Option<&RoomCatalog>, owned: &[&str]) -> Vec<String> {
-        let owned: Vec<String> = owned.iter().map(|s| (*s).to_owned()).collect();
-        validate(layout, catalog, &owned).err().unwrap_or_default()
+    fn fixture_catalog() -> RoomCatalog {
+        catalog_in(fixtures())
+    }
+
+    fn problems(layout: &Value, catalog: Option<&RoomCatalog>, tried: &[&str]) -> Vec<String> {
+        let tried: Vec<String> = tried.iter().map(|s| (*s).to_owned()).collect();
+        validate(layout, catalog, &tried).err().unwrap_or_default()
     }
 
     fn base_layout() -> Value {
@@ -699,9 +720,16 @@ mod tests {
     }
 
     #[test]
-    fn fixture_catalog_is_consistent() {
-        let problems = catalog_problems(&fixture_catalog());
-        assert!(problems.is_empty(), "{}", problems.join("\n"));
+    fn fixture_catalogs_are_consistent() {
+        for dir in [fixtures(), app_fixtures().as_path()] {
+            let problems = catalog_problems(&catalog_in(dir));
+            assert!(
+                problems.is_empty(),
+                "{}:\n{}",
+                dir.display(),
+                problems.join("\n")
+            );
+        }
     }
 
     #[test]
@@ -716,28 +744,114 @@ mod tests {
         }
     }
 
-    /// Cada caso de `catalog/room-fixtures` trae el acomodo, lo que la persona ya probó y los
-    /// problemas esperados, en el orden en que salen (los mismos que da la app).
-    #[test]
-    fn fixture_cases() {
-        let catalog = fixture_catalog();
-        let mut cases = 0;
-        for entry in fs::read_dir(fixtures()).unwrap() {
+    /// Un caso: el acomodo, los ajustes que la persona ya probó y los problemas esperados, en el
+    /// orden en que salen. La API explica el caso en `about` y la app en `description`.
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Case {
+        #[serde(alias = "description")]
+        about: String,
+        /// Ids de ajustes, no tipos: la app los convierte con `earnedTypes` y aquí van tal cual.
+        #[serde(rename = "owned")]
+        tried: Vec<String>,
+        layout: Value,
+        problems: Vec<String>,
+    }
+
+    /// Corre cada caso de `dir` con el `catalog.json` de esa carpeta y exige los problemas
+    /// exactos, en orden. `here` da lo que se espera aquí en los casos en que el servidor responde
+    /// otra cosa que la app. Devuelve cuántos casos corrió.
+    fn run_cases(dir: &Path, here: &[(&str, &[&str])]) -> usize {
+        let catalog = catalog_in(dir);
+        let (mut cases, mut differ) = (0, 0);
+        for entry in fs::read_dir(dir).unwrap() {
             let path = entry.unwrap().path();
             let name = path.file_name().unwrap().to_string_lossy().to_string();
             if !name.ends_with(".json") || name == "catalog.json" {
                 continue;
             }
-            let case: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
-            let owned: Vec<String> = serde_json::from_value(case["owned"].clone()).unwrap();
-            let expected: Vec<String> = serde_json::from_value(case["problems"].clone()).unwrap();
-            let got = validate(&case["layout"], Some(&catalog), &owned)
+            let json = fs::read_to_string(&path).unwrap();
+            let case: Case = serde_json::from_str(&json).unwrap_or_else(|e| panic!("{name}: {e}"));
+            let expected: Vec<String> = match here.iter().find(|(file, _)| *file == name) {
+                Some((_, problems)) => {
+                    assert_ne!(
+                        case.problems, *problems,
+                        "{name}: ya da lo mismo que la app"
+                    );
+                    differ += 1;
+                    problems.iter().map(|p| (*p).to_owned()).collect()
+                }
+                None => case.problems,
+            };
+            let got = validate(&case.layout, Some(&catalog), &case.tried)
                 .err()
                 .unwrap_or_default();
-            assert_eq!(got, expected, "caso {name}");
+            assert_eq!(got, expected, "{name}: {}", case.about);
             cases += 1;
         }
+        assert_eq!(
+            differ,
+            here.len(),
+            "{}: diferencias sin caso",
+            dir.display()
+        );
+        cases
+    }
+
+    /// Cada caso de `catalog/room-fixtures`.
+    #[test]
+    fn fixture_cases() {
+        let cases = run_cases(fixtures(), &[]);
         assert!(cases >= 5, "solo hubo {cases} casos");
+    }
+
+    /// Casos de la app que aquí dan otra cosa, con lo que dan. El servidor solo acepta el tamaño
+    /// del catálogo (5 × 5, el único que arma la app); la app acepta de 1 a `MAX_SIZE` por lado.
+    /// Si un lado cambia su regla, `run_cases` avisa para quitar el caso de aquí.
+    const DIFFER_FROM_APP: [(&str, &[&str]); 1] = [("valid-rotated.json", &["size: invalid"])];
+
+    /// Los casos de la app (`validateLayout`) dan aquí los mismos problemas, en el mismo orden,
+    /// salvo `DIFFER_FROM_APP`.
+    #[test]
+    fn app_fixture_cases() {
+        let cases = run_cases(&app_fixtures(), &DIFFER_FROM_APP);
+        assert!(cases >= 5, "solo hubo {cases} casos de la app");
+    }
+
+    /// En el monorepo, `mobile/` tiene que ser igual a los casos de la app: si cambian allá, se
+    /// vuelven a copiar. En el espejo del equipo (solo `apps/api`) no hay con qué comparar.
+    #[test]
+    fn app_fixtures_are_an_up_to_date_copy() {
+        let mobile = Path::new(env!("CARGO_MANIFEST_DIR")).join("../mobile");
+        if !mobile.is_dir() {
+            return;
+        }
+        let source = mobile.join("src/components/room/__tests__/fixtures/layouts");
+        let read = |dir: &Path| -> BTreeMap<String, Value> {
+            fs::read_dir(dir)
+                .unwrap_or_else(|e| panic!("{}: {e}", dir.display()))
+                .map(|entry| entry.unwrap().path())
+                .filter(|path| path.extension().is_some_and(|ext| ext == "json"))
+                .map(|path| {
+                    let name = path.file_name().unwrap().to_string_lossy().to_string();
+                    let json = fs::read_to_string(&path).unwrap();
+                    let value =
+                        serde_json::from_str(&json).unwrap_or_else(|e| panic!("{name}: {e}"));
+                    (name, value)
+                })
+                .collect()
+        };
+        let (app, copy) = (read(&source), read(&app_fixtures()));
+        let names: BTreeSet<&String> = app.keys().chain(copy.keys()).collect();
+        let stale: Vec<&String> = names
+            .into_iter()
+            .filter(|name| app.get(*name) != copy.get(*name))
+            .collect();
+        assert!(
+            stale.is_empty(),
+            "copia vieja en catalog/room-fixtures/mobile ({stale:?}): vuelve a copiar los .json de {}",
+            source.display()
+        );
     }
 
     #[test]
