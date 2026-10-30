@@ -16,14 +16,19 @@ Giros: un cuarto de vuelta es (x, y) -> (d − 1 − y, x), como rotateCell en i
 modelo mira a +y con rot 0, así que los objetos con frente usan facings [0, 3] (r3 mira a +x); en r1 y
 r2 se verían de espaldas. Las convenciones de anclas, giros y máscaras van en la cabecera de manifest.ts.
 
+Para editar el cuarto hay casillas de piso (`cell.valid`, `cell.blocked`, `cell.target`) y la sombra
+de lo que se levanta (`shadow.WxD`); la vista previa trae una sala en modo edición.
+
 Uso: python docs/brand/draw_room.py            (escribe todo)
      python docs/brand/draw_room.py --draft X  (solo la vista previa en X, para iterar el arte)
 Escribe apps/mobile/assets/room/atlas.png, apps/mobile/src/components/room/manifest.ts,
 apps/api/catalog/room.json y docs/brand/room-preview.png. Antes de escribir revisa (y falla si no se
 cumple): solo colores de la paleta, cero pixeles huérfanos fuera del tramado, todos los cuadros de
 cada tipo, anclas dentro del sprite, 1 px de separación en el atlas, los `adjustments` iguales a
-`ITEM_FOR_ADJUSTMENT` de apps/mobile/src/lib/desk.ts, room.json igual a los tipos del manifiesto y
-salida idéntica byte a byte en dos corridas.
+`ITEM_FOR_ADJUSTMENT` de apps/mobile/src/lib/desk.ts, room.json igual a los tipos del manifiesto,
+las marcas de edición (tamaño y ancla de su huella, formas distintas entre sí y contraste en cada piso
+y alfombra), las animaciones de reposo (el cuadro 0 es el reposo; el 1 cambia sin salirse más de 1 px
+ni mover la base) y salida idéntica byte a byte en dos corridas.
 """
 import base64
 import hashlib
@@ -134,10 +139,11 @@ def outline(pix):
         pix[q] = (ol, False, None)
 
 
-def to_sprite(pix, anchor=(0, 0)):
-    """pix: {(x, y): (clave, suelto, contorno)} en coordenadas locales; `anchor` también local."""
-    xs = [x for x, _ in pix] + [anchor[0]]
-    ys = [y for _, y in pix] + [anchor[1]]
+def to_sprite(pix, anchor=(0, 0), box=None):
+    """pix: {(x, y): (clave, suelto, contorno)} en coordenadas locales; `anchor` también local.
+    `box` (x0, y0, x1, y1), si viene, fija el tamaño del cuadro aunque las orillas queden vacías."""
+    xs = [x for x, _ in pix] + [anchor[0]] + ([box[0], box[2]] if box else [])
+    ys = [y for _, y in pix] + [anchor[1]] + ([box[1], box[3]] if box else [])
     x0, y0 = min(xs), min(ys)
     img = Image.new("RGBA", (max(xs) - x0 + 1, max(ys) - y0 + 1), (0, 0, 0, 0))
     px = img.load()
@@ -465,6 +471,104 @@ def blinds_sprite(wall):
     return on_wall(cells, wall)
 
 
+# --- Edición: casillas y sombra -----------------------------------------------------------------
+#
+# Marcas planas que la vista pone sobre el piso al mover algo (overlay.ts): sobre baldosas y
+# alfombras y debajo de paredes y muebles, la sombra antes que la casilla donde cae; lo levantado va
+# encima de todo. Ninguna depende solo del color: `cell.valid` es un contorno sencillo de trazos,
+# `cell.blocked` un marco con trama adentro y `cell.target` un contorno doble con muescas en las
+# esquinas (las tres máscaras son distintas). Cada casilla lleva un tono claro y uno oscuro, así al
+# menos uno contrasta 3:1 con cada piso y alfombra (el script lo revisa), y lo translúcido es tramado
+# ordenado, nunca alfa.
+
+CELLS = ("valid", "blocked", "target")
+SHADOWS = ((1, 1), (2, 1), (1, 2), (2, 2))  # huella ya girada: w celdas en x y d en y
+EDIT_TONES = ("screen_hi", "wall")  # el color principal de la app en modo oscuro y claro (theme.ts)
+BLOCK_TONES = ("peach", "oak_deep")  # cálidos y apagados: "aquí no" sin rojo de alarma
+# Sombra: el café más oscuro de la madera. Se separa de las bases oscuras (ink) de sillas y lámparas
+# y, con el centro tramado al 75 %, oscurece los tres pisos.
+SHADOW_TONE = "oak_deep"
+
+# Anillo 1 de `cell.valid`, por pasos de 2 px desde la esquina de atrás (0) hasta la de adelante (13),
+# igual en las dos mitades: esquinas oscuras (D) y tramos claros (L), sin huecos. En cada piso
+# contrasta al menos uno de los dos tonos, y el otro hace de hueco: trazos en cualquier piso.
+VALID_DASHES = "DDLLLDDDDLLLDD"
+HATCH = 6  # `cell.blocked`: una raya a 45° cada 6 px
+
+
+def ring(u, v, w=1, d=1):
+    """Anillo de un pixel de la huella (u, v de `diamond`): 0 = la orilla, 1 = el siguiente, …"""
+    return min(u, v, 32 * w - 1 - u, 32 * d - 1 - v) // 2
+
+
+BAYER = ((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5))
+
+
+def dither(x, y, sixteenths):
+    """Tramado ordenado (Bayer 4 × 4): prende `sixteenths`/16 de los pixeles, anidado entre niveles
+    (todo pixel del 25 % está en el 50 %, y todo el 50 % en el 75 %; el 50 % es `checker`)."""
+    return BAYER[y % 4][x % 4] < sixteenths
+
+
+def flat_mark(paint, w=1, d=1):
+    """Marca del tamaño exacto del rombo de una huella w × d, con el ancla en su esquina de atrás
+    (como floor.*). `paint(px, py, u, v, r)` -> (clave, suelto) o None."""
+    pix = {}
+    for (px, py), (u, v) in diamond(w, d).items():
+        hit = paint(px, py, u, v, ring(u, v, w, d))
+        if hit:
+            pix[(px, py)] = (hit[0], hit[1], None)
+    return to_sprite(pix, box=(1 - 16 * d, 0, 16 * w - 2, 8 * (w + d) - 1))
+
+
+def cell_valid():
+    """Se puede: contorno sencillo de trazos de dos tonos en el anillo 1."""
+    def paint(px, py, u, v, r):
+        return (EDIT_TONES[VALID_DASHES[py - 1] == "D"], False) if r == 1 else None
+    return flat_mark(paint)
+
+
+def cell_blocked():
+    """Aquí no: marco de dos tonos (claro afuera, oscuro adentro) y trama a 45° de rayas de 2 px
+    (luz arriba a la izquierda, sombra abajo a la derecha), con un pixel de aire junto al marco.
+    Una raya pasa por el centro de la baldosa y ninguna queda de un solo pixel en la orilla."""
+    light, dark = BLOCK_TONES
+
+    def paint(px, py, u, v, r):
+        if r in (1, 2):
+            return ((light, dark)[r - 1], False)
+        t = (px + py - 7) % HATCH
+        return ((light, dark)[t], False) if r >= 4 and t < 2 else None
+    return flat_mark(paint)
+
+
+def cell_target():
+    """Aquí cae: contorno doble (oscuro y claro en la orilla, oscuro dos pixeles adentro) unido en
+    cada esquina por una muesca oscura."""
+    light, dark = EDIT_TONES
+
+    def paint(px, py, u, v, r):
+        k, last = py - r, 15 - 2 * r  # paso dentro del anillo
+        corner = min(k, last - k, abs(2 * k - last) // 2)  # pasos hasta la esquina más cercana
+        if r in (0, 3) or (r == 2 and corner == 0):
+            return (dark, False)
+        return (light, False) if r == 1 else None
+    return flat_mark(paint)
+
+
+def lift_shadow(w, d):
+    """Sombra de lo que se levanta: rombo redondeado (superelipse 3 en u, v) a 1 px de la orilla de
+    la huella, tramado al 75 % al centro, 50 % y 25 % hacia la orilla. Cuentas enteras."""
+    A, B = 32 * w - 4, 32 * d - 4  # semiejes × 2, 1 px (2 unidades) hacia adentro
+
+    def paint(px, py, u, v, r):
+        a, b = abs(2 * u + 1 - 32 * w), abs(2 * v + 1 - 32 * d)
+        n, full = a ** 3 * B ** 3 + b ** 3 * A ** 3, A ** 3 * B ** 3
+        level = 12 if 10 * n < 3 * full else 8 if 20 * n < 13 * full else 4 if n < full else 0
+        return (SHADOW_TONE, True) if dither(px, py, level) else None
+    return flat_mark(paint, w, d)
+
+
 # --- Objetos ------------------------------------------------------------------------------------
 
 def desk(variant, facing, frame=None):
@@ -551,16 +655,22 @@ SNAKE_BLADES = [
     [0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3],
     [2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 6],
 ]
+# Mecerse (`sway1`): desde esta fila de cada hoja hacia arriba, la punta se inclina un pixel hacia la
+# luz (a la izquierda), como la planta de la escena 2D. Cada corte cae donde la hoja no da ya un paso
+# a la izquierda, así ninguna se quiebra: en las que se inclinan a la derecha, la punta se endereza.
+SNAKE_SWAY = [9, 14, 8, 8]
 
 
-def snake_leaves():
+def snake_leaves(sway=False):
     cells = {}
     for t in range(5):
         for x in range(-4 + (t > 2), 5 - (t > 2)):
             cells[(x, -t)] = ("leaf_deep" if x >= 3 - (t > 2) else "leaf", False, "wall_deep")
-    for lefts in SNAKE_BLADES:
+    for lefts, cut in zip(SNAKE_BLADES, SNAKE_SWAY):
         h = len(lefts)
         for t, x0 in enumerate(lefts):
+            if sway and t >= cut:
+                x0 -= 1
             width = 3 if t < h - 2 else 2 if t == h - 2 else 1
             for k in range(width):
                 key = "leaf_hi" if k == 0 else "leaf_deep" if k == width - 1 or t % 4 == 2 else "leaf"
@@ -573,7 +683,7 @@ def plant(variant, facing, frame=None):
     m.box(2, 2, 0, 4, 4, 3, "pot")
     m.box(2, 2, 3, 4, 4, 1, "rim")
     m.box(3, 3, 3, 2, 2, 1, "soil")
-    return vox(m, facing, over=[((4, 4, 4), snake_leaves())])
+    return vox(m, facing, over=[((4, 4, 4), snake_leaves(frame == ("sway", 1)))])
 
 
 def headphones(variant, facing, frame=None):
@@ -966,24 +1076,31 @@ def floor_lamp(variant, facing, frame=None):
     return vox(m, facing, over=[((4, 4, 0), pole)])
 
 
+FERN = [
+    "..........hh..........",
+    ".......h.hllh.h.......",
+    ".....h.hhlllhhlh.h....",
+    "...h.hhllllllllhhlh...",
+    "..hhhllllllllllllhh...",
+    ".hhllllllddllllllllh..",
+    ".hlllddlllllllddlllh..",
+    "hlllllllldddllllllllh.",
+    "hlddlllddlllddllllllh.",
+    "lld.llddl...lldd.lldl.",
+    "ld...dd.......dd...dd.",
+]
+FERN_SWAY = 3  # `sway1`: las puntas de arriba (estas filas) se inclinan un pixel a la izquierda
+
+
 def fern(variant, facing, frame=None):
     m = Model(8, 8)
     m.box(2, 2, 0, 4, 4, 3, "cream")
     m.box(2, 2, 3, 4, 4, 1, "cream2")
     m.box(3, 3, 3, 2, 2, 1, "soil")
-    fronds = grid([
-        "..........hh..........",
-        ".......h.hllh.h.......",
-        ".....h.hhlllhhlh.h....",
-        "...h.hhllllllllhhlh...",
-        "..hhhllllllllllllhh...",
-        ".hhllllllddllllllllh..",
-        ".hlllddlllllllddlllh..",
-        "hlllllllldddllllllllh.",
-        "hlddlllddlllddllllllh.",
-        "lld.llddl...lldd.lldl.",
-        "ld...dd.......dd...dd.",
-    ], {"h": "leaf_hi", "l": "leaf", "d": "leaf_deep"}, origin=(11, 6), ol="wall_deep")
+    rows = FERN
+    if frame == ("sway", 1):
+        rows = [r[1:] + "." if j < FERN_SWAY else r for j, r in enumerate(FERN)]
+    fronds = grid(rows, {"h": "leaf_hi", "l": "leaf", "d": "leaf_deep"}, origin=(11, 6), ol="wall_deep")
     return vox(m, facing, over=[((4, 4, 4), fronds)])
 
 
@@ -1039,17 +1156,23 @@ BEAVER_WAVE = [
 ]
 BEAVER_LEGEND = {"o": "oak_deep", "h": "fur_hi", "f": "fur", "s": "fur_shadow", "b": "peach", "a": "apricot",
                  "n": "oak_deep", "w": "cream", "t": "pot_shadow", "T": "pot"}
+# Parpadeo (`blink1`): cada ojo (1 × 2 px) se cierra en una raya de 2 px abajo, hacia afuera de la cara.
+BEAVER_BLINK = {(9, 6): "h", (14, 6): "h", (8, 7): "o", (15, 7): "o"}
 
 
 def beaver(variant, facing, frame=None):
     rows = [list(r) for r in BEAVER]
-    if frame:
-        top, patch = BEAVER_WAVE[frame[1]]
+    anim, n = frame or (None, 0)
+    if anim == "wave":
+        top, patch = BEAVER_WAVE[n]
         for j, row in enumerate(patch):
             for i, ch in enumerate(row):
                 if ch != ".":
                     rows[top + j][i] = ch
         rows[15][7] = rows[16][8] = "h"
+    elif anim == "blink" and n == 1:
+        for (i, j), ch in BEAVER_BLINK.items():
+            rows[j][i] = ch
     cells = grid(["".join(r) for r in rows], BEAVER_LEGEND, origin=(13, len(rows)))
     return flat2d(cells, facing=facing)
 
@@ -1092,7 +1215,7 @@ TYPES = {
     "chair": T("Silla", "Chair", chair, place=["floor"], footprint=[1, 1], facings=[0, 1, 2, 3],
                base=True, variants=["sage", "terracotta"]),
     "plant": T("Planta", "Plant", plant, place=["floor", "surface"], footprint=[1, 1], facings=[0],
-               base=True, variants=["default"]),
+               base=True, variants=["default"], anim={"sway": 2}),
     # Lo que deja cada prueba terminada.
     "headphones": T("Audífonos", "Headphones", headphones, place=["surface"], footprint=[1, 1],
                     facings=FRONT, variants=["default"]),
@@ -1134,11 +1257,11 @@ TYPES = {
     "floorLamp": T("Lámpara de pie", "Floor lamp", floor_lamp, place=["floor"], footprint=[1, 1],
                    facings=[0], decor=True, variants=["cream", "terracotta"]),
     "fern": T("Helecho", "Fern", fern, place=["floor", "surface"], footprint=[1, 1], facings=[0],
-              decor=True, variants=["default"]),
+              decor=True, variants=["default"], anim={"sway": 2}),
     "poster": T("Póster", "Poster", poster, place=["wall"], footprint=[1, 2], facings=WALL_SIDES,
                 decor=True, variants=["hills", "wave"]),
     "beaver": T("Castor", "Beaver", beaver, place=["floor"], footprint=[1, 1], facings=FRONT,
-                decor=True, variants=["default"], anim={"wave": 2}),
+                decor=True, variants=["default"], anim={"wave": 2, "blink": 2}),
 }
 for _name, _ids in ADJUSTMENTS.items():
     TYPES[_name]["adjustments"] = _ids
@@ -1159,6 +1282,10 @@ def build_frames():
             frames[f"sky.{s}.{wall}"] = sky_sprite(s, wall)
     for wall in ("left", "right"):
         frames[f"blinds.{wall}"] = blinds_sprite(wall)
+    for kind, draw in zip(CELLS, (cell_valid, cell_blocked, cell_target)):
+        frames[f"cell.{kind}"] = draw()
+    for w, d in SHADOWS:
+        frames[f"shadow.{w}x{d}"] = lift_shadow(w, d)
     heights = {}
     for name, spec in TYPES.items():
         if spec["draw"] is None:
@@ -1329,7 +1456,14 @@ HEADER = """// Generado por docs/brand/draw_room.py. No se edita a mano: se camb
  * - Objetos de pared: r0 en la pared derecha (y = 0) y r1 en la izquierda (x = 0), como
  *   `WALL_FACING` en depth.ts. Tramos de pared, ventana, cielo y persiana llevan `.left` / `.right`.
  * - Animaciones de reposo: `tipo.variante.rN:animK` con K desde 0; el cuadro sin sufijo es el reposo
- *   (pantalla: `wave0` ruidosa, `wave1` media, `wave2` tranquila = reposo).
+ *   (pantalla: `wave0` ruidosa, `wave1` media, `wave2` tranquila = reposo). En `sway` (planta y
+ *   helecho: las puntas se inclinan 1 px) y `blink` (castor: cierra los ojos) el cuadro 0 es el reposo
+ *   y el 1 el que se mueve.
+ * - Edición: `cell.valid` (trazos), `cell.blocked` (marco y trama) y `cell.target` (contorno doble con
+ *   muescas) miden una baldosa, 30 × 16, con el ancla en su esquina trasera, como `floor.*`.
+ *   `shadow.WxD` (huella ya girada: W celdas en x, D en y) mide el rombo de la huella y su ancla es su
+ *   esquina trasera a z = 0. Van sobre piso y alfombras y debajo de paredes y muebles, la sombra
+ *   antes que la casilla donde cae; lo levantado, encima de todo.
  * - El piso se dibuja de atrás hacia adelante: cada baldosa trae 2 px de canto que tapan las de delante.
  * - Máscara: 1 bit por pixel, por filas, sin relleno por fila (bit i = y · ancho + x, el primero en
  *   el bit más alto de cada byte), en base64 estándar. Cuadros iguales comparten `rect`.
@@ -1371,6 +1505,91 @@ def orphans(img, exempt):
                        for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy):
                 out.append((x, y))
     return out
+
+
+def contrast(a, b):
+    """Razón de contraste WCAG entre dos claves de la paleta (solo para revisar, no para pintar)."""
+    def lum(key):
+        lin = [c / 255 / 12.92 if c <= 10 else ((c / 255 + 0.055) / 1.055) ** 2.4 for c in RGBA[key][:3]]
+        return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+    hi, lo = sorted((lum(a), lum(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def edit_problems(frames):
+    """Marcas de edición: cada casilla mide una baldosa y cada sombra su huella, con el ancla en la
+    esquina de atrás y todo adentro del rombo (la sombra, a 1 px de la orilla). Las casillas se
+    distinguen por la forma y llevan un tono a 3:1 de cada piso y alfombra; la sombra oscurece todos
+    (2:1 como mínimo: la que informa es la casilla destino)."""
+    problems = []
+    keys = {c: k for k, c in RGBA.items()}
+    surfaces = {f"el piso {v}": FLOORS[v][0] for v in FLOORS} | {f"la alfombra {v}": RUGS[v][0] for v in RUGS}
+    marks = [(f"cell.{k}", 1, 1, 0) for k in CELLS] + [(f"shadow.{w}x{d}", w, d, 1) for w, d in SHADOWS]
+    masks = {}
+    for name, w, d, inset in marks:
+        sp = frames.get(name)
+        if sp is None:
+            problems.append(f"falta {name}")
+            continue
+        size, anchor = (16 * (w + d) - 2, 8 * (w + d)), (16 * d - 1, 0)
+        if sp.img.size != size or sp.anchor != anchor:
+            problems.append(f"{name}: {sp.img.size} con ancla {sp.anchor}; debe medir {size} con ancla {anchor}")
+            continue
+        inside, px, tones, on = diamond(w, d), sp.img.load(), set(), set()
+        for y in range(size[1]):
+            for x in range(size[0]):
+                if px[x, y][3]:
+                    q = (x - anchor[0], y - anchor[1])
+                    on.add(q)
+                    tones.add(keys[px[x, y]])
+                    if q not in inside or ring(*inside[q], w, d) < inset:
+                        problems.append(f"{name}: pixel fuera de su lugar en {(x, y)}")
+        masks[name] = on
+        for label, base in surfaces.items():
+            if name.startswith("cell.") and max(contrast(t, base) for t in tones) < 3:
+                problems.append(f"{name}: ningún tono contrasta 3:1 con {label}")
+            if name.startswith("shadow.") and any(contrast(t, base) < 2 or LUMA[t] >= LUMA[base] for t in tones):
+                problems.append(f"{name}: la sombra no oscurece {label}")
+    cells = [masks[f"cell.{k}"] for k in CELLS if f"cell.{k}" in masks]
+    for i, a in enumerate(cells):
+        for b in cells[i + 1:]:
+            if 4 * len(a ^ b) < len(a | b):
+                problems.append("las casillas se parecen demasiado en forma: el color no puede ser la única señal")
+    return problems
+
+
+def idle_problems(frames):
+    """Mecerse y parpadear: el cuadro 0 es el reposo; el 1 cambia, no se sale más de 1 px de la caja
+    del reposo y no toca nada a la altura del ancla o debajo (la base no se mueve)."""
+    def at(s, x, y):  # pixel relativo al ancla; transparente fuera del cuadro
+        lx, ly = x + s.anchor[0], y + s.anchor[1]
+        inside = 0 <= lx < s.img.width and 0 <= ly < s.img.height
+        return s.img.getpixel((lx, ly)) if inside else (0, 0, 0, 0)
+
+    problems = []
+    for name, spec in TYPES.items():
+        for anim in ("sway", "blink"):
+            if anim not in (spec.get("anim") or {}):
+                continue
+            for variant in spec["variants"]:
+                for facing in spec["facings"]:
+                    base = f"{name}.{variant}.r{facing}"
+                    rest, first, moved = (frames.get(n) for n in (base, f"{base}:{anim}0", f"{base}:{anim}1"))
+                    if not (rest and first and moved):
+                        continue  # ya se reporta como cuadro faltante
+                    if first.key() != rest.key() or first.anchor != rest.anchor:
+                        problems.append(f"{base}:{anim}0 debe ser el reposo")
+                    box = [(-s.anchor[0], -s.anchor[1], s.img.width - s.anchor[0], s.img.height - s.anchor[1])
+                           for s in (rest, moved)]
+                    if moved.key() == rest.key() and moved.anchor == rest.anchor:
+                        problems.append(f"{base}:{anim}1 no cambia")
+                    elif max(abs(p - q) for p, q in zip(*box)) > 1:
+                        problems.append(f"{base}:{anim}1 se sale más de 1 px del reposo")
+                    left, right = min(b[0] for b in box), max(b[2] for b in box)
+                    if any(at(rest, x, y) != at(moved, x, y) for y in range(max(b[3] for b in box))
+                           for x in range(left, right)):
+                        problems.append(f"{base}:{anim}1 mueve la base (a la altura del ancla o debajo)")
+    return problems
 
 
 def parse_desk_ts():
@@ -1424,6 +1643,8 @@ def check(out):
     for wall in ("left", "right"):
         if f"blinds.{wall}" not in frames:
             problems.append(f"falta blinds.{wall}")
+    problems += edit_problems(frames)
+    problems += idle_problems(frames)
     if "dim" not in m["types"]["monitor"]["variants"]:
         problems.append("screenDim necesita la variante dim del monitor")
     # Atlas: sin traslapes y con 1 px de separación entre cuadros.
@@ -1481,16 +1702,23 @@ def rotate_cell(cx, cy, fp, rot):
 
 
 def compose(layout, frames):
-    """Lo mismo que buildDrawList (depth.ts, tecnica.md §6.4), en Python, para revisar el arte."""
+    """Lo mismo que buildDrawList (depth.ts, tecnica.md §6.4), en Python, para revisar el arte.
+    En modo edición (overlay.ts), `cells` [(tipo, x, y)] y la sombra del `ghost` van sobre el piso y
+    las alfombras, el `ghost` (lo levantado, `lift` px) encima de todo, y un objeto con `alpha` se
+    dibuja tenue (`DrawItem.alpha`: el original de lo que se mueve)."""
     w, d = layout["size"]
     pad = 2
     W, H = (w + d) * 16 + 2 * pad, (w + d) * 8 + WALL_H + 2 * pad
     ox, oy = d * 16 + pad, WALL_H + pad
     canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
 
-    def put(name, ax, ay):
+    def put(name, ax, ay, alpha=1):
         sp = frames[name]
-        canvas.alpha_composite(sp.img, (ox + ax - sp.anchor[0], oy + ay - sp.anchor[1]))
+        img = sp.img
+        if alpha < 1:
+            img = img.copy()
+            img.putalpha(img.getchannel("A").point(lambda a: round(a * alpha)))
+        canvas.alpha_composite(img, (ox + ax - sp.anchor[0], oy + ay - sp.anchor[1]))
 
     for s in range(w + d - 1):
         for x in range(w):
@@ -1500,6 +1728,13 @@ def compose(layout, frames):
     items = layout["items"]
     for it in sorted([i for i in items if TYPES[i["type"]].get("flat")], key=lambda i: (i["x"] + i["y"], i["x"])):
         put(f"{it['type']}.{it['variant']}.r{it['rot']}", *cell_to_art(it["x"], it["y"]))
+    ghost = layout.get("ghost")
+    if ghost:
+        fp = TYPES[ghost["type"]]["footprint"]
+        gw, gd = fp if ghost["rot"] % 2 == 0 else fp[::-1]
+        put(f"shadow.{gw}x{gd}", *cell_to_art(ghost["x"], ghost["y"]))
+    for kind, x, y in layout.get("cells", ()):
+        put(f"cell.{kind}", *cell_to_art(x, y))
     win_wall, win_u = layout["window"]
     put(f"sky.{layout['sky']}.{win_wall}", *wall_to_art(win_wall, win_u))
     for u in range(max(w, d)):
@@ -1535,7 +1770,7 @@ def compose(layout, frames):
         r = max(ax - frames[n].anchor[0] + frames[n].img.width for n, ax, ay in draws)
         b = max(ay - frames[n].anchor[1] + frames[n].img.height for n, ax, ay in draws)
         entries.append({"x0": it["x"], "y0": it["y"], "x1": it["x"] + fw, "y1": it["y"] + fd,
-                        "box": (l, t, r, b), "draws": draws})
+                        "box": (l, t, r, b), "draws": draws, "alpha": it.get("alpha", 1)})
     n = len(entries)
     indeg, edges = [0] * n, [[] for _ in range(n)]
     for i, a in enumerate(entries):
@@ -1559,7 +1794,9 @@ def compose(layout, frames):
             indeg[j] -= 1
     for k in order:
         for name, ax, ay in entries[k]["draws"]:
-            put(name, ax, ay)
+            put(name, ax, ay, entries[k]["alpha"])
+    if ghost:
+        put(f"{ghost['type']}.{ghost['variant']}.r{ghost['rot']}", *cell_to_art(ghost["x"], ghost["y"], ghost["lift"]))
     return canvas
 
 
@@ -1618,38 +1855,78 @@ TURNED_ROOM = {
     ],
 }
 
+EDIT_ROOM = {
+    # Edición, como overlay.ts al mover la silla: el original queda tenue en su lugar (35 %), la silla
+    # va levantada sobre su destino (sombra y `cell.target`; 4 px, lo de "con detalles"), las casillas
+    # de alrededor se marcan como posibles y la del castor, ocupada ("Ese lugar está ocupado"). Piso
+    # oscuro y una alfombra clara debajo, para ver que las marcas leen en los dos.
+    "size": (5, 5), "floor": "oak_dark", "wall": "sage", "window": ("left", 2), "sky": "dawn",
+    "items": [
+        {"type": "rug", "variant": "cream", "x": 1, "y": 2, "rot": 0},
+        {"type": "desk", "variant": "oak", "x": 1, "y": 0, "rot": 0,
+         "on": [("monitor", "normal"), ("mug", "default")]},
+        {"type": "chair", "variant": "sage", "x": 1, "y": 1, "rot": 2, "alpha": 0.35},
+        {"type": "bookshelf", "variant": "oak", "x": 0, "y": 0, "rot": 3, "on": [("plant", "default")]},
+        {"type": "beaver", "variant": "default", "x": 3, "y": 1, "rot": 0},
+        {"type": "armchair", "variant": "terracotta", "x": 4, "y": 0, "rot": 0},
+        {"type": "fern", "variant": "default", "x": 0, "y": 4, "rot": 0},
+        {"type": "frame", "variant": "home", "wall": "right", "u": 2, "row": 1},
+    ],
+    "cells": [("valid", 1, 1), ("valid", 2, 1), ("blocked", 3, 1), ("valid", 1, 2), ("target", 2, 2),
+              ("valid", 3, 2), ("valid", 1, 3), ("valid", 2, 3), ("valid", 3, 3)],
+    "ghost": {"type": "chair", "variant": "sage", "x": 2, "y": 2, "rot": 2, "lift": 4},
+}
+
+
+def on_oak(name, sp, frames):
+    """En la hoja de contacto, las marcas de edición van sobre baldosas de roble (su huella): en el
+    papel no se vería su tono claro."""
+    m = re.fullmatch(r"(?:cell\.\w+|shadow\.(\d)x(\d))", name)
+    if not m:
+        return sp.img
+    w, d = (int(m.group(1)), int(m.group(2))) if m.group(1) else (1, 1)
+    tile = frames["floor.oak"]
+    img = Image.new("RGBA", (sp.img.width, sp.img.height + 2), (0, 0, 0, 0))  # + el canto de 2 px
+    for s in range(w + d - 1):
+        for i in range(w):
+            if 0 <= s - i < d:
+                ax, ay = cell_to_art(i, s - i)
+                img.alpha_composite(tile.img, (sp.anchor[0] + ax - tile.anchor[0], sp.anchor[1] + ay - tile.anchor[1]))
+    img.alpha_composite(sp.img)
+    return img
+
 
 def preview(out):
-    """Tres salas (×3) arriba y la hoja de contacto (×3) abajo, con vecino más cercano."""
+    """Cuatro salas (×3) arriba, la última en modo edición, y la hoja de contacto (×3) abajo, con
+    vecino más cercano."""
     frames, unique, alias = out["frames"], out["unique"], out["alias"]
     paper = (244, 238, 226, 255)
     S = 3
     font = ImageFont.load_default()
-    rooms = [compose(r, frames) for r in (BASE_ROOM, DECO_ROOM, TURNED_ROOM)]
+    rooms = [compose(r, frames) for r in (BASE_ROOM, DECO_ROOM, TURNED_ROOM, EDIT_ROOM)]
     rw, rh = rooms[0].width * S, rooms[0].height * S
     names = {}
     for name in sorted(frames):
         names.setdefault(alias[name], name)
-    cells = sorted(((names[h], unique[h]) for h in names), key=lambda c: c[0])
-    W = 3 * rw + 4 * 16
+    cells = sorted(((names[h], on_oak(names[h], unique[h], frames)) for h in names), key=lambda c: c[0])
+    W = len(rooms) * (rw + 16) + 16
     col_w = 124
     x = y = row_h = 0
     pos = []
-    for name, sp in cells:
-        w = max(col_w, sp.img.width * S + 8)
+    for name, im in cells:
+        w = max(col_w, im.width * S + 8)
         if x + w > W - 32:
             x, y, row_h = 0, y + row_h, 0
-        pos.append((name, sp, x, y))
+        pos.append((name, im, x, y))
         x += w
-        row_h = max(row_h, sp.img.height * S + 20)
+        row_h = max(row_h, im.height * S + 20)
     top = 16 + rh + 24
     img = Image.new("RGBA", (W, top + y + row_h + 16), paper)
     draw = ImageDraw.Draw(img)
     for n, room in enumerate(rooms):
         img.alpha_composite(room.resize((rw, rh), Image.NEAREST), (16 + n * (rw + 16), 16))
-    for name, sp, cx, cy in pos:
-        im = sp.img.resize((sp.img.width * S, sp.img.height * S), Image.NEAREST)
-        img.alpha_composite(im, (16 + cx + 4, top + cy + 14))
+    for name, im, cx, cy in pos:
+        img.alpha_composite(im.resize((im.width * S, im.height * S), Image.NEAREST), (16 + cx + 4, top + cy + 14))
         draw.text((16 + cx + 4, top + cy + 2), name, fill=(60, 60, 60, 255), font=font)
     return img
 
