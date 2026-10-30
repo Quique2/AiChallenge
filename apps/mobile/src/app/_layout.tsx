@@ -5,6 +5,8 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider, router } from 'expo-rout
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
+import { StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useIsDark, useTheme } from '@/hooks/use-theme';
 import { useLocale, type Locale } from '@/i18n';
@@ -17,12 +19,15 @@ import { preloadSounds } from '@/lib/sounds';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  // La raíz de los gestos (react-native-gesture-handler 3): sin ella, arrastrar en el cuarto no se reconoce.
   return (
-    <SettingsProvider>
-      <QueryClientProvider client={queryClient}>
-        <RootNavigator />
-      </QueryClientProvider>
-    </SettingsProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <SettingsProvider>
+        <QueryClientProvider client={queryClient}>
+          <RootNavigator />
+        </QueryClientProvider>
+      </SettingsProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -123,3 +128,9 @@ function useServerLocale(locale: Locale, enabled: boolean) {
       .catch(() => {});
   }, [locale, enabled]);
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});
