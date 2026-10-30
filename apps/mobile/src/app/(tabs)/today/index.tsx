@@ -33,7 +33,7 @@ export default function Today() {
   const spaces = useSpaces();
   const [openedAt] = useState(() => Date.now());
   const lastHelped = playbook.data?.[0];
-  // The companion belongs to the desk; hiding the desk hides both.
+  // Desk and companion can be hidden independently; focus mode hides both.
   const items = settings.showDesk ? desk.items : [];
   const askAboutRecap = settings.recapDay !== 'off' && openedAt - settings.recapSeenAt > RECAP_UNSEEN_MS;
 
@@ -74,18 +74,12 @@ export default function Today() {
         </Group>
       ) : null}
 
-      {settings.showDesk ? <View style={styles.desk}>
+      {settings.showDesk && !settings.focusMode ? <View style={styles.desk}>
         <DeskScene
           items={items}
           interactive
           accessibilityLabel={t.desk.label(items.map((item) => t.desk.items[item]))}
         />
-        <View style={styles.companion}>
-          <BeaverMascot pose="coffee" size={72} />
-          <ThemedText type="callout" themeColor="textSecondary" style={styles.companionText}>
-            {t.today.mascotNote}
-          </ThemedText>
-        </View>
         <View style={styles.caption}>
           {settings.showDesk ? (
             <ThemedText type="footnote" themeColor="textSecondary" style={styles.shrink}>
@@ -99,6 +93,13 @@ export default function Today() {
           ) : null}
         </View>
       </View> : null}
+
+        {settings.showMascot && !settings.focusMode ? <View style={styles.companion}>
+          <BeaverMascot pose="coffee" size={72} />
+          <ThemedText type="callout" themeColor="textSecondary" style={styles.companionText}>
+            {t.today.mascotNote}
+          </ThemedText>
+        </View> : null}
 
       <View style={styles.prompt}>
         <ThemedText type="headline" style={styles.center}>
@@ -135,7 +136,7 @@ export default function Today() {
         </Group>
       ) : null}
 
-      {askAboutRecap ? (
+      {askAboutRecap && !settings.focusMode ? (
         <Group title={t.today.recapStillTitle}>
           <GroupRow first>
             <ThemedText type="callout">{t.today.recapStillBody}</ThemedText>
@@ -150,7 +151,7 @@ export default function Today() {
       ) : null}
 
       {/* Se ofrece una sola vez y no vuelve a aparecer: la persona elige, sin insistir. */}
-      {!settings.experienceOffered ? (
+      {!settings.experienceOffered && !settings.focusMode ? (
         <Group title={t.today.experienceTitle}>
           <GroupRow first>
             <ThemedText type="callout">{t.today.experienceBody}</ThemedText>
