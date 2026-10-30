@@ -221,6 +221,9 @@ const es = {
     deskEmpty: 'Cada prueba que termines deja aquí un objeto, haya ayudado o no.',
     deskCount: (n: number) => `${n} ${n === 1 ? 'prueba terminada' : 'pruebas terminadas'}`,
     deskTap: 'Toca la escena para darle vida.',
+    roomEmpty: 'Cada prueba que termines en este lugar deja un objeto en su cuarto, haya ayudado o no.',
+    /** Junto al nombre del lugar: el total de todos los lugares, un número que solo sube. */
+    roomCount: (n: number) => `${n} ${n === 1 ? 'prueba terminada' : 'pruebas terminadas'} en total`,
     seeWeek: 'Ver mi semana',
     experienceTitle: '¿Le damos más vida a la app?',
     experienceBody:
@@ -292,6 +295,11 @@ const es = {
     rotated: 'Girado.',
     placed: (name: string) => `${name}, en el cuarto.`,
     stored: (name: string) => `${name}, en tus cosas.`,
+    /** Arrastrar es un atajo: lo mismo se hace con las flechas o tocando la casilla destino. */
+    dragHint: 'Mantén presionado un objeto para arrastrarlo.',
+    dropHere: 'Suéltalo para dejarlo aquí.',
+    /** Lo que solo va encima de algo, lejos de todo mueble. */
+    dropOnFurniture: 'Suéltalo encima de un mueble.',
     pin: 'Fijar en el corcho',
     unpin: 'Quitar del corcho',
     corkTitle: 'Tu corcho: lo que me sirve aquí',
@@ -495,6 +503,8 @@ const es = {
     recapOfferBody: 'Tres cosas sobre tu espacio, el día y a la hora que elijas. Sin sonido.',
     recapOfferYes: 'Elegir día y hora',
     recapOfferNo: 'No, gracias',
+    /** Lo que la prueba dejó en el cuarto de su lugar (igual para cualquier resultado). */
+    nowIn: (place: string) => `Ahora en ${place}`,
   },
   playbook: {
     emptyTitle: 'Aquí aparecerá lo que te funcione',

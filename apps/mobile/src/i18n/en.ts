@@ -216,6 +216,8 @@ const en: Strings = {
     deskEmpty: 'Each trial you finish leaves an object here, whether it helped or not.',
     deskCount: (n: number) => `${n} ${n === 1 ? 'trial finished' : 'trials finished'}`,
     deskTap: 'Tap the scene to bring it to life.',
+    roomEmpty: 'Each trial you finish in this place leaves an object in its room, whether it helped or not.',
+    roomCount: (n: number) => `${n} ${n === 1 ? 'trial' : 'trials'} finished in total`,
     seeWeek: 'See my week',
     experienceTitle: 'Shall we bring the app to life?',
     experienceBody:
@@ -279,6 +281,9 @@ const en: Strings = {
     rotated: 'Rotated.',
     placed: (name: string) => `${name}, in the room.`,
     stored: (name: string) => `${name}, in your things.`,
+    dragHint: 'Press and hold an object to drag it.',
+    dropHere: 'Let go to put it here.',
+    dropOnFurniture: 'Drop it on top of a piece of furniture.',
     pin: 'Pin to the corkboard',
     unpin: 'Remove from the corkboard',
     corkTitle: 'Your corkboard: what works for me here',
@@ -478,6 +483,7 @@ const en: Strings = {
     recapOfferBody: 'Three things about your space, on the day and at the time you choose. No sound.',
     recapOfferYes: 'Choose day and time',
     recapOfferNo: 'No, thanks',
+    nowIn: (place: string) => `Now in ${place}`,
   },
   playbook: {
     emptyTitle: 'What works for you will show up here',

@@ -1,13 +1,15 @@
 import { QueryFeedback } from '@/components/query-feedback';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { BeaverMascot } from '@/components/beaver-mascot';
 import { Button } from '@/components/button';
 import { DeskScene } from '@/components/desk/desk-scene';
 import { Group, GroupRow } from '@/components/group';
+import { RoomView } from '@/components/room/room-view';
+import type { RoomLayout } from '@/components/room/types';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -16,10 +18,26 @@ import { useDesk } from '@/lib/desk';
 import { useMotionLevel } from '@/lib/feedback';
 import { cancelRecap } from '@/lib/notifications';
 import { keys, queryClient, useLabels, usePlaybook, useSpaces, useTrying } from '@/lib/queries';
+import { useCurrentPlace, usePlaceRoom } from '@/lib/room';
 import { useSettings } from '@/lib/settings';
 
 /** Tras 5 semanas sin abrir el resumen, se pregunta una vez si lo sigue queriendo (nunca se insiste). */
 const RECAP_UNSEEN_MS = 5 * 7 * 24 * 60 * 60 * 1000;
+
+/** El cuarto de Hoy llega con su animación de entrada solo la primera vez en cada sesión de la app. */
+const session = { introShown: false };
+
+/**
+ * El cuarto del lugar de ahora, arriba en Hoy: la primera vez por sesión se arma con su entrada
+ * (según el nivel de movimiento); siempre, la onda del monitor se calma al aparecer.
+ */
+function HeroRoom({ layout, modifiers, label }: { layout: RoomLayout; modifiers: { blinds: boolean; dim: boolean }; label: string }) {
+  const [intro] = useState(() => !session.introShown);
+  useEffect(() => {
+    session.introShown = true;
+  }, []);
+  return <RoomView layout={layout} modifiers={modifiers} intro={intro} settle accessibilityLabel={label} />;
+}
 
 export default function Today() {
   const t = useT();
@@ -34,13 +52,22 @@ export default function Today() {
   const [openedAt] = useState(() => Date.now());
   const lastHelped = playbook.data?.[0];
   // Desk and companion can be hidden independently; focus mode hides both.
+  const showHero = settings.showDesk && !settings.focusMode;
   const items = settings.showDesk ? desk.items : [];
+  // El cuarto del lugar de ahora; sin lugar (o sin conexión), la escena 2D de "Tu escritorio".
+  const place = useCurrentPlace();
+  const room = usePlaceRoom(showHero ? place : undefined);
+  // El total de pruebas, de todos los lugares: un número que solo sube (DESIGN §11).
+  const count = !desk.ready ? null : desk.trials ? t.today.roomCount(desk.trials) : t.today.roomEmpty;
   const askAboutRecap = settings.recapDay !== 'off' && openedAt - settings.recapSeenAt > RECAP_UNSEEN_MS;
 
   function refresh() {
     trying.refetch();
     playbook.refetch();
     queryClient.invalidateQueries({ queryKey: keys.progress });
+    queryClient.invalidateQueries({ queryKey: keys.done });
+    queryClient.invalidateQueries({ queryKey: keys.spaces });
+    if (place) queryClient.invalidateQueries({ queryKey: keys.room(place.id) });
   }
 
   async function stopRecap() {
@@ -74,25 +101,43 @@ export default function Today() {
         </Group>
       ) : null}
 
-      {settings.showDesk && !settings.focusMode ? <View style={styles.desk}>
-        <DeskScene
-          items={items}
-          interactive
-          accessibilityLabel={t.desk.label(items.map((item) => t.desk.items[item]))}
-        />
-        <View style={styles.caption}>
-          {settings.showDesk ? (
+      {/* Tocar el cuarto abre su lugar. El cuarto no recibe el toque: al navegar no suena ni se mueve. */}
+      {showHero && room.scene === 'room' && room.layout && place ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={count ? `${room.label} ${count}` : room.label}
+          accessibilityHint={t.place.open}
+          onPress={() => router.push({ pathname: '/place/[id]', params: { id: place.id } })}
+          style={({ pressed }) => [styles.desk, { opacity: pressed ? 0.7 : 1 }]}>
+          <View style={styles.passive}>
+            <HeroRoom key={place.id} layout={room.layout} modifiers={room.modifiers} label={room.label} />
+          </View>
+          <View style={styles.roomCaption}>
+            <ThemedText type="footnote" themeColor="textSecondary" style={styles.shrink}>
+              {count ? `${place.name} · ${count}` : place.name}
+            </ThemedText>
+            <SymbolView name="chevron.right" size={14} tintColor={theme.textSecondary} accessibilityElementsHidden />
+          </View>
+        </Pressable>
+      ) : showHero && room.scene === 'desk' ? (
+        <View style={styles.desk}>
+          <DeskScene
+            items={items}
+            interactive
+            accessibilityLabel={t.desk.label(items.map((item) => t.desk.items[item]))}
+          />
+          <View style={styles.caption}>
             <ThemedText type="footnote" themeColor="textSecondary" style={styles.shrink}>
               {desk.trials ? `${t.today.deskTitle} · ${t.today.deskCount(desk.trials)}` : t.today.deskEmpty}
             </ThemedText>
-          ) : null}
-          {level === 'detailed' ? (
-            <ThemedText type="footnote" themeColor="textSecondary" importantForAccessibility="no">
-              {t.today.deskTap}
-            </ThemedText>
-          ) : null}
+            {level === 'detailed' ? (
+              <ThemedText type="footnote" themeColor="textSecondary" importantForAccessibility="no">
+                {t.today.deskTap}
+              </ThemedText>
+            ) : null}
+          </View>
         </View>
-      </View> : null}
+      ) : null}
 
         {settings.showMascot && !settings.focusMode ? <View style={styles.companion}>
           <BeaverMascot pose="coffee" size={72} />
@@ -204,6 +249,16 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     columnGap: Spacing.two,
     paddingHorizontal: Spacing.one,
+  },
+  roomCaption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.one,
+  },
+  passive: {
+    pointerEvents: 'none',
   },
   placeRow: {
     minHeight: 44,
