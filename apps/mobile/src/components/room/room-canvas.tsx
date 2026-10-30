@@ -5,6 +5,10 @@ import { PixelRatio, Pressable, type GestureResponderEvent } from 'react-native'
 import { touchToArt } from '@/components/room/iso';
 import type { DrawItem, Manifest } from '@/components/room/types';
 
+/** Los tonos de las casillas de edición: el arte no cambia con la paleta y uno de los dos siempre contrasta. */
+const OUTLINE_LIGHT = '#C3E6D6';
+const OUTLINE_DARK = '#20494A';
+
 /** Pixeles nítidos: sin suavizado al escalar (Skia suaviza por defecto). */
 const NEAREST = { filter: FilterMode.Nearest, mipmap: MipmapMode.None } as const;
 
@@ -97,8 +101,8 @@ type RoomCanvasProps = {
   opacity?: number;
   /** Toque en px de arte (para elegir objeto o casilla). */
   onPressArt?: (ax: number, ay: number) => void;
-  /** Contorno punteado del objeto elegido, en px de arte: forma y no solo color. */
-  outline?: { x: number; y: number; w: number; h: number; color: string };
+  /** Contorno punteado del objeto elegido, en px de arte, en dos tonos alternados: forma y no solo color. */
+  outline?: { x: number; y: number; w: number; h: number };
   accessibilityLabel: string;
 };
 
@@ -141,18 +145,21 @@ export function RoomCanvas({
       style={{ width, height, alignSelf: 'center' }}>
       <Canvas style={{ width, height, opacity: roomOpacity }}>
         {image ? <RoomAtlas image={image} drawList={drawList} manifest={manifest} s={s} /> : null}
-        {outline ? (
-          <Rect
-            x={(outline.x - 1) * s}
-            y={(outline.y - 1) * s}
-            width={(outline.w + 2) * s}
-            height={(outline.h + 2) * s}
-            style="stroke"
-            strokeWidth={Math.max(1, s)}
-            color={outline.color}>
-            <DashPathEffect intervals={[3 * s, 2 * s]} />
-          </Rect>
-        ) : null}
+        {outline
+          ? [OUTLINE_LIGHT, OUTLINE_DARK].map((color, i) => (
+              <Rect
+                key={color}
+                x={(outline.x - 1) * s}
+                y={(outline.y - 1) * s}
+                width={(outline.w + 2) * s}
+                height={(outline.h + 2) * s}
+                style="stroke"
+                strokeWidth={Math.max(1, s)}
+                color={color}>
+                <DashPathEffect intervals={[3 * s, 3 * s]} phase={i * 3 * s} />
+              </Rect>
+            ))
+          : null}
       </Canvas>
     </Pressable>
   );

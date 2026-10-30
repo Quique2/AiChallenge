@@ -40,7 +40,6 @@ import { RoomCanvas } from '@/components/room/room-canvas';
 import type { DrawItem, ItemPlace, RoomLayout } from '@/components/room/types';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/i18n';
 import { useFeedback, useMotionLevel, type MotionLevel } from '@/lib/feedback';
 
@@ -139,7 +138,6 @@ export function RoomView({
   onSettled,
   accessibilityLabel,
 }: RoomViewProps) {
-  const theme = useTheme();
   const t = useT();
   const level = useMotionLevel();
   const feedback = useFeedback();
@@ -275,8 +273,8 @@ export function RoomView({
     const item = selected && !drag ? drawn.find((d) => d.uid === selected) : undefined;
     const frame = item ? MANIFEST.frames[item.frame] : undefined;
     if (!item || !frame) return undefined;
-    return { x: item.x, y: item.y, w: frame.rect[2], h: frame.rect[3], color: theme.primary };
-  }, [selected, drag, drawn, theme.primary]);
+    return { x: item.x, y: item.y, w: frame.rect[2], h: frame.rect[3] };
+  }, [selected, drag, drawn]);
 
   // El arrastre (tecnica.md §6.2 y §9) corre en el hilo de JS. Solo vuelve a dibujar cuando el
   // fantasma cambia de lugar: `dragUpdate` devuelve el mismo objeto si no.

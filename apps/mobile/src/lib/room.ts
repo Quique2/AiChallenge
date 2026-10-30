@@ -7,6 +7,7 @@ import type { RoomLayout } from '@/components/room/types';
 import { useLocale, useT, type Locale } from '@/i18n';
 import { api, ApiError } from '@/lib/api';
 import { keys, queryClient, useDone, useProgress, useSpaces, useTrying } from '@/lib/queries';
+import { useSettings } from '@/lib/settings';
 import type { Checkin, Space } from '@/lib/types';
 
 /** Lo guardado de un cuarto: `null` si ese lugar todavía no tiene uno. */
@@ -89,6 +90,13 @@ export function typeLabel(type: string, locale: Locale) {
   return MANIFEST.types[type]?.label[locale] ?? type;
 }
 
+/** ¿Ya se había probado aquí algo que da este objeto? La memoria del lugar ya cuenta la prueba que acaba de terminar. */
+async function triedHereBefore(spaceId: string, type: string) {
+  const adjustments = MANIFEST.types[type]?.adjustments ?? [];
+  const entries = (await api.memory(spaceId)).tried.filter((entry) => adjustments.includes(entry.adjustment.id));
+  return entries.length > 1 || entries.some((entry) => entry.trials > 1);
+}
+
 /**
  * Al terminar una prueba en un lugar, su objeto aparece en el cuarto de ese lugar si todavía no
  * está ahí, en un sitio libre razonable (`autoPlaceWithHost`: con una mesita si los escritorios
@@ -98,6 +106,10 @@ export function typeLabel(type: string, locale: Locale) {
  * con lo que tenía antes de esta prueba, `triedBefore`) más el objeto nuevo. Así lo de antes no se
  * reacomoda: el cuarto por defecto se vuelve a armar desde cero cada vez que se gana algo. Sin
  * `triedBefore` no se sabe qué veía, y no se guarda nada.
+ *
+ * Si la persona ya lo tenía, no está en este cuarto y ya se había probado aquí, ella lo guardó (o no
+ * cabía): no vuelve solo, sigue en "Tus cosas". Eso se pregunta a la API solo en ese caso; si falla,
+ * tampoco vuelve.
  *
  * Devuelve el uid de lo que puso (para su animación de llegada) o `null` si no puso nada. Los
  * errores de red se propagan: quien llama decide cuánto esperar.
@@ -119,9 +131,10 @@ export async function placeEarnedInRoom(
     if (!triedBefore) return null;
     base = defaultRoom(spaceId, earnedTypes(MANIFEST, triedBefore));
   }
-  const next = base.items.some((item) => item.type === type)
-    ? null
-    : autoPlaceWithHost(base, MANIFEST, type, spec.variants[0], freshUid);
+  const inRoom = base.items.some((item) => item.type === type);
+  const hadIt = !triedBefore || earnedTypes(MANIFEST, triedBefore).includes(type);
+  const stays = inRoom || (!!stored && hadIt && (await triedHereBefore(spaceId, type)));
+  const next = stays ? null : autoPlaceWithHost(base, MANIFEST, type, spec.variants[0], freshUid);
   if (!next) {
     // Lo que se acaba de leer le sirve a la pantalla del resultado, si todavía no tenía nada.
     if (queryClient.getQueryData(keys.room(spaceId)) === undefined) queryClient.setQueryData(keys.room(spaceId), stored);
@@ -209,8 +222,8 @@ export function useCurrentPlace(): Space | null | undefined {
 
 /**
  * Qué se ve donde antes iba "Tu escritorio" 2D: `room`, el cuarto del lugar; `desk`, la escena 2D
- * (sin lugar, sin conexión o con un cuarto de una versión más nueva de la app); `wait` mientras se
- * sabe, para no saltar de una escena a la otra.
+ * (sin lugar, sin conexión o con un cuarto de una versión más nueva de la app; en modo concentración
+ * no dibuja nada); `wait` mientras se sabe, para no saltar de una escena a la otra.
  */
 export type RoomScene = 'room' | 'desk' | 'wait';
 
@@ -221,10 +234,11 @@ export type RoomScene = 'room' | 'desk' | 'wait';
 export function usePlaceRoom(place: Pick<Space, 'id' | 'name'> | null | undefined) {
   const t = useT();
   const locale = useLocale();
+  const { settings } = useSettings();
   const room = useRoom(place?.id ?? '');
   let scene: RoomScene;
   if (place === undefined) scene = 'wait';
-  else if (!place || room.needsUpdate) scene = 'desk';
+  else if (!place || room.needsUpdate || settings.focusMode) scene = 'desk';
   else if (room.layout) scene = 'room';
   else scene = room.isPending ? 'wait' : 'desk';
   const label =

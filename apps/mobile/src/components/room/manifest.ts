@@ -90,7 +90,7 @@ export const MANIFEST: Manifest = {
     'bookshelf.sage.r3': { rect: [29, 59, 28, 43], anchor: [17, 29], mask: 'AADAAAA/AAAP/AAD//AA///AP//+D///8////3/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////v///8////B///wD//8AD//AAD/wAAD8AAADAAAA==' },
     'cell.blocked': { rect: [172, 354, 30, 16], anchor: [15, 0], mask: 'AAAAAAAMAAAA/AAADzwAAPA8AA8hPADzDDwPGGE8PMMM8DwYTwA8wPAAPA8AADzwAAA/AAAAMAAAAAAA' },
     'cell.target': { rect: [203, 354, 30, 16], anchor: [15, 0], mask: 'AAMAAAA/AAAD/wAAPM8AA8zPADzAzwPMAM8/wAD//wAD/PMAM8DzAzwA8zPAAPM8AAD/wAAA/AAAAMAA' },
-    'cell.valid': { rect: [0, 373, 30, 16], anchor: [15, 0], mask: 'AAAAAAAMAAAAzAAADAwAAMAMAAwADADAAAwMAAAMMAAAMDAAAwAwADAAMAMAADAwAAAzAAAAMAAAAAAA' },
+    'cell.valid': { rect: [0, 373, 30, 16], anchor: [15, 0], mask: 'AAAAAAAMAAAAzAAAAAAAAAAAAAAAAADAAAwMAAAMMAAAMDAAAwAAAAAAAAAAAAAAAAAzAAAAMAAAAAAA' },
     'chair.sage.r0': { rect: [77, 218, 28, 31], anchor: [13, 18], mask: 'AAMAAAB8AAAP8AAA/8AAD/8AAP/8AA//4AD//wAP//AA//8AD//wAP//AD//8A///wP///D///8////3///+////z////P///8////x///+D///wD//8AH//gA///AD//8AH//gAPz8AAMDAAA==' },
     'chair.sage.r1': { rect: [224, 251, 28, 24], anchor: [13, 11], mask: 'AAAAwAAAPgAAD/AAA/8ADP/wA///AP//8D///w////P///9/////////////7////P///8f///g///8A///wB//+AP//wA///AB//4AD8/AADAwA' },
     'chair.sage.r2': { rect: [195, 251, 28, 24], anchor: [15, 11], mask: 'MAAAB8AAAP8AAA/8AAD/8wAP//wA///wD///wP///w////z////v////f///8////z////H///4P///A///wB//+AD//8AP//wAf/+AA/PwAAwMA' },

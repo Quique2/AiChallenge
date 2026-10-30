@@ -199,6 +199,13 @@ describe('arrastre', () => {
     expect(list.some((d) => d.frame === CELL_TARGET)).toBe(false);
   });
 
+  it('lo bloqueado se dibuja encima de lo que estorba: si no, ese mueble lo taparía', () => {
+    const { list } = dragScene(base, 'chair', pt(1.5, 1.5), pt(2.5, 0.5));
+    const blocked = list.findIndex((d) => d.frame === CELL_BLOCKED);
+    const lastObject = list.reduce((last, d, i) => (d.uid ? i : last), -1);
+    expect(blocked).toBeGreaterThan(lastObject);
+  });
+
   it('el anfitrión lleva lo de encima en el fantasma, y ambos quedan transparentes en su lugar', () => {
     const { list } = dragScene(base, 'desk', pt(1.5, 0.5), pt(3.5, 3.5));
     const ghost = list.slice(-2);

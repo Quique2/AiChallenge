@@ -157,10 +157,10 @@ Cada lugar guardado tiene un cuarto isométrico en pixel art (arte propio: `docs
 - **Se gana un objeto por prueba terminada en ese lugar, ayude o no** (sección 11). No hay puntos, moneda, tienda, saldo ni "te faltan N". Decorar es libre desde el primer día: piso, pared, alfombra, plantas, cuadros, el castor, con 2 a 4 versiones por objeto.
 - **Nunca es la única vista.** "Cuarto / Lista" muestra la misma información; la lista siempre está debajo del cuarto, en texto.
 - **Tocar un objeto dice qué es y qué se sabe de él** ("Probado 3 veces aquí; ayudó 2"), igual para lo que ayudó y lo que no. La app nunca destaca nada por su cuenta: el corcho "Lo que me sirve aquí" lo llena solo la persona.
-- **La persona decide dónde va cada cosa.** La app solo agrega lo recién ganado en un lugar libre razonable (si el escritorio está lleno, con una mesita, como mucho 2 por cuarto); nunca mueve lo que ya está. Lo que no cabe espera en "Tus cosas".
+- **La persona decide dónde va cada cosa.** La app solo agrega lo recién ganado en un lugar libre razonable (si el escritorio está lleno, con una mesita, como mucho 2 por cuarto); nunca mueve lo que ya está. Lo que no cabe espera en "Tus cosas", y lo que la persona guardó ahí no vuelve solo aunque lo pruebe otra vez en ese lugar.
 - **El primer objeto ganado guarda el cuarto.** Mientras un lugar no tiene cuarto guardado, se arma uno por defecto, igual en cualquier teléfono. Al terminar ahí la primera prueba se guarda lo que la persona ya veía más el objeto nuevo, para que nada se reacomode. Desde entonces, lo que gane en otros lugares espera en "Tus cosas" de este.
 - **Nunca hace falta arrastrar** (WCAG 2.5.7): se elige un objeto tocándolo o desde la lista "En el cuarto", y se mueve con las flechas o tocando la casilla destino. Arrastrar es un atajo opcional: se mantiene presionado unos 150 ms, sin competir con el scroll, y con el lector de pantalla se apaga. Lo que no se puede se dice en texto ("Ese lugar está ocupado"). La cámara es fija, sin zoom.
-- **Se guarda solo al confirmar** ("Guardar cambios"); "Deshacer" y "Cancelar" siempre están. Si otra pantalla guardó antes, se avisa y no se pisa.
+- **Se guarda solo al confirmar** ("Guardar cambios"); "Deshacer" y "Cancelar" siempre están, y "Cancelar" pregunta si hay cambios. Deslizar no cierra el editor. Si otra pantalla guardó antes, se avisa, se muestra lo guardado y no se pisa.
 - **Movimiento:** las reglas de la sección 5, en enteros de pixel de arte, sin rebote y una sola vez por acción. El reloj solo corre mientras algo se mueve y se pausa fuera de la pantalla.
 
   | Acción | Reducido | Tranquilo | Con detalles |
@@ -173,7 +173,8 @@ Cada lugar guardado tiene un cuarto isométrico en pixel art (arte propio: `docs
   | En reposo | Quieto | La onda del monitor se calma al abrir | Además, un objeto a la vez durante 5 s como mucho: ventilador, vapor, planta o castor |
   | Arrastrar | Sin levantar | Levantado 2 px | Levantado 4 px |
 
-  Al arrastrar, el objeto salta de casilla en casilla, sin inercia, con su sombra y la casilla destino; si no se puede soltar ahí, la casilla cambia de forma, no solo de color, y el motivo se dice en texto. El tono del resultado suena cuando el objeto toca el piso, nunca antes.
+  Al arrastrar, el objeto salta de casilla en casilla, sin inercia, con su sombra y la casilla destino; si no se puede soltar ahí, la casilla bloqueada se ve encima de lo que estorba, con otra forma y no solo otro color, y el motivo se dice en texto. El tono del resultado suena cuando el objeto toca el piso, nunca antes.
 - **Nada se pierde ni se deteriora:** no hay plantas que se secan ni mascotas que piden atención. El castor solo está ahí.
+- **Modo concentración:** sin escenas; en cada lugar queda el texto, que dice lo mismo.
 - **"Este lugar cambió"** reinicia las sugerencias de ese lugar sin borrar la historia.
 

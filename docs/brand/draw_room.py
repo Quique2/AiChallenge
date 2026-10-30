@@ -475,7 +475,7 @@ def blinds_sprite(wall):
 #
 # Marcas planas que la vista pone sobre el piso al mover algo (overlay.ts): sobre baldosas y
 # alfombras y debajo de paredes y muebles, la sombra antes que la casilla donde cae; lo levantado va
-# encima de todo. Ninguna depende solo del color: `cell.valid` es un contorno sencillo de trazos,
+# encima de todo. Ninguna depende solo del color: `cell.valid` son muescas en las esquinas,
 # `cell.blocked` un marco con trama adentro y `cell.target` un contorno doble con muescas en las
 # esquinas (las tres máscaras son distintas). Cada casilla lleva un tono claro y uno oscuro, así al
 # menos uno contrasta 3:1 con cada piso y alfombra (el script lo revisa), y lo translúcido es tramado
@@ -490,9 +490,10 @@ BLOCK_TONES = ("peach", "oak_deep")  # cálidos y apagados: "aquí no" sin rojo 
 SHADOW_TONE = "oak_deep"
 
 # Anillo 1 de `cell.valid`, por pasos de 2 px desde la esquina de atrás (0) hasta la de adelante (13),
-# igual en las dos mitades: esquinas oscuras (D) y tramos claros (L), sin huecos. En cada piso
-# contrasta al menos uno de los dos tonos, y el otro hace de hueco: trazos en cualquier piso.
-VALID_DASHES = "DDLLLDDDDLLLDD"
+# igual en las dos mitades: una muesca en cada esquina, oscura (D) y clara (L), y nada entre ellas.
+# Con todas las casillas válidas a la vista queda una rejilla de puntos, no un piso a cuadros: esto
+# se ve mientras la persona decide y no debe saturar. En cada piso contrasta al menos un tono.
+VALID_DASHES = "DL   LDDL   LD"
 HATCH = 6  # `cell.blocked`: una raya a 45° cada 6 px
 
 
@@ -522,9 +523,11 @@ def flat_mark(paint, w=1, d=1):
 
 
 def cell_valid():
-    """Se puede: contorno sencillo de trazos de dos tonos en el anillo 1."""
+    """Se puede: muescas de dos tonos en las cuatro esquinas del anillo 1."""
     def paint(px, py, u, v, r):
-        return (EDIT_TONES[VALID_DASHES[py - 1] == "D"], False) if r == 1 else None
+        if r != 1 or VALID_DASHES[py - 1] == " ":
+            return None
+        return (EDIT_TONES[VALID_DASHES[py - 1] == "D"], False)
     return flat_mark(paint)
 
 

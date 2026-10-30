@@ -9,8 +9,8 @@ import type { DrawItem, Manifest, RoomLayout } from './types';
  * Lo que se dibuja además del cuarto (tecnica.md §6.4–§6.5): casillas de la edición, sombras de
  * lo levantado y el fantasma de lo que se arrastra; y las animaciones de `anim.ts` aplicadas a la
  * lista de dibujo. Casillas y sombras van sobre las baldosas y alfombras y debajo de paredes y
- * objetos (`DrawOptions.under`); el fantasma, encima de todo. Nada de esto lleva `uid`: no se toca.
- * Las casillas usan contorno (`cell.valid`) y trama (`cell.blocked`), no solo color.
+ * objetos (`DrawOptions.under`); lo bloqueado y el fantasma, encima de todo. Nada de esto lleva
+ * `uid`: no se toca. Las casillas usan muescas (`cell.valid`) y trama (`cell.blocked`), no solo color.
  */
 
 export const CELL_VALID = 'cell.valid';
@@ -95,8 +95,9 @@ function ghostItems(layout: RoomLayout, manifest: Manifest, state: DragState, up
 
 /**
  * Lo que dibuja un arrastre. `under`: los destinos válidos (`cell.valid`), la sombra en el destino
- * y `cell.target` (se puede) o `cell.blocked` (no se puede, con el motivo en texto) en sus casillas.
- * `over`: el fantasma, levantado según el nivel; va al final de la lista, encima de todo.
+ * y `cell.target` en sus casillas si se puede. `over`, al final de la lista y encima de todo: si no
+ * se puede, `cell.blocked` (lo que estorba suele tapar esa casilla; el motivo va además en texto), y
+ * el fantasma, levantado según el nivel.
  */
 export function dragOverlay(
   layout: RoomLayout,
@@ -122,11 +123,14 @@ export function dragOverlay(
     const shadow = onFloor(manifest, o, shadowFrame(w, d), p.x, p.y);
     if (shadow) under.push(shadow);
   }
+  const marks: DrawItem[] = [];
   for (const [x, y] of update.cells) {
     const cell = onFloor(manifest, o, update.valid ? CELL_TARGET : CELL_BLOCKED, x, y);
-    if (cell) under.push(cell);
+    if (cell) marks.push(cell);
   }
-  return { under, over: ghostItems(layout, manifest, state, update, DRAG_LIFT[level], options) };
+  if (update.valid) under.push(...marks);
+  const ghost = ghostItems(layout, manifest, state, update, DRAG_LIFT[level], options);
+  return { under, over: update.valid ? ghost : [...marks, ...ghost] };
 }
 
 /**

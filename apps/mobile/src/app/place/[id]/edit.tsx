@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { AccessibilityInfo, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Alert, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Group, GroupRow } from '@/components/group';
@@ -151,8 +151,28 @@ export default function EditRoom() {
           feedback.confirm();
           router.back();
         },
+        // Otra pantalla guardó antes: se muestra lo guardado, para no pisarlo (`t.room.conflict` lo dice).
+        onError: (error) => {
+          if (!(error instanceof ApiError) || error.status !== 409) return;
+          setDraft(null);
+          setHistory([]);
+          setSelected(null);
+          setProblem(null);
+        },
       },
     );
+  }
+
+  /** Salir sin guardar: si hay cambios, se pregunta primero. Es la única salida sin guardar de esta pantalla. */
+  function cancel() {
+    if (!draft) {
+      router.back();
+      return;
+    }
+    Alert.alert(t.room.discardTitle, t.room.discardBody, [
+      { text: t.room.discardKeep, style: 'cancel' },
+      { text: t.room.discardConfirm, style: 'destructive', onPress: () => router.back() },
+    ]);
   }
 
   // Inventario: lo que la persona tiene y no está en el cuarto (sin siluetas de lo que le falta).
@@ -178,7 +198,7 @@ export default function EditRoom() {
           <Button title={t.room.save} loading={save.isPending} disabled={!draft} onPress={saveAndClose} />
           <View style={styles.row}>
             <Button variant="secondary" title={t.room.undo} disabled={!history.length} onPress={undo} style={styles.flex} />
-            <Button variant="plain" title={t.settings.cancel} onPress={() => router.back()} style={styles.flex} />
+            <Button variant="plain" title={t.settings.cancel} onPress={cancel} style={styles.flex} />
           </View>
         </>
       }>

@@ -15,11 +15,12 @@ jest.mock('@/lib/api', () => {
       this.status = status;
     }
   }
-  return { ApiError, api: { room: jest.fn(), saveRoom: jest.fn() } };
+  return { ApiError, api: { room: jest.fn(), saveRoom: jest.fn(), memory: jest.fn() } };
 });
 
 const room = api.room as jest.Mock;
 const saveRoom = api.saveRoom as jest.Mock;
+const memory = api.memory as jest.Mock;
 
 const SPACE = 'space-1';
 const fresh = (tried: string[] = []) => defaultLayout(SPACE, MANIFEST, earnedTypes(MANIFEST, tried), uidMaker(SPACE));
@@ -46,6 +47,34 @@ describe('placeEarnedInRoom', () => {
     expect(next.items).toHaveLength(before.items.length + 1);
     expect(validateLayout(next, MANIFEST, earnedTypes(MANIFEST, ['noise_cancelling']))).toEqual([]);
     expect(queryClient.getQueryData(keys.room(SPACE))).toEqual({ revision: 4, layout: next });
+  });
+
+  const triedHere = (id: string, trials: number) => ({ tried: [{ adjustment: { id }, trials, helped: 0, stimulus: null }] });
+
+  it('lo que la persona guardó no vuelve solo al probarlo otra vez aquí', async () => {
+    room.mockResolvedValue({ revision: 3, layout: fresh() });
+    memory.mockResolvedValue(triedHere('noise_cancelling', 2));
+
+    expect(await placeEarnedInRoom(SPACE, 'headphones', ['noise_cancelling'])).toBeNull();
+    expect(saveRoom).not.toHaveBeenCalled();
+  });
+
+  it('lo que ya tenía de otro lugar sí llega la primera vez que se prueba aquí', async () => {
+    room.mockResolvedValue({ revision: 3, layout: fresh() });
+    memory.mockResolvedValue(triedHere('noise_cancelling', 1));
+    saveRoom.mockResolvedValue({ revision: 4 });
+
+    const uid = await placeEarnedInRoom(SPACE, 'headphones', ['noise_cancelling']);
+
+    expect(typeOf(saveRoom.mock.calls[0][2] as RoomLayout, uid)).toBe('headphones');
+  });
+
+  it('si no se puede saber si ya se probó aquí, tampoco vuelve', async () => {
+    room.mockResolvedValue({ revision: 3, layout: fresh() });
+    memory.mockRejectedValue(new ApiError(500));
+
+    await expect(placeEarnedInRoom(SPACE, 'headphones', ['noise_cancelling'])).rejects.toBeInstanceOf(ApiError);
+    expect(saveRoom).not.toHaveBeenCalled();
   });
 
   it('sin cuarto guardado, guarda el que la persona veía más lo nuevo (revisión 0)', async () => {
