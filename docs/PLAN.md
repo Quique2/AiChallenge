@@ -207,11 +207,23 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 | 3 | ✅ 26 oct | **Experiencia y retención sin presión:** arreglos del permiso del micrófono y de los botones fuera de la pantalla; "Tu escritorio" (un objeto por cada prueba terminada, haya ayudado o no, que nunca se pierde); tres niveles de movimiento; sonidos suaves opcionales; resumen semanal opcional; plan "si…, entonces…". App 1.3.0 + API 0.4.0 |
 | 4 | ✅ 29 oct | **Cuarto isométrico y memoria por lugar** (sección 10): memoria por lugar en el motor, "Lo que sé de este lugar", "Usarlo otra vez", cuarto decorable por lugar con editor accesible y el castor en pixel art. App 1.4.0 + API 0.5.0 |
 | 4.1 | ✅ 30 oct | **Animaciones del cuarto:** entrada, llegada de lo ganado, mover, girar, guardar y reposo por nivel de movimiento; arrastre opcional en el editor; el cuarto en Hoy, resultado, Listo, semana y Ajustes; integración de `expo-speech` y los cambios de Magda en una build. App 1.5.0 + API 0.5.1 |
+| 4.2 | | **Lo que pidió la socioformadora y más arte:** ruta cognitiva con el mismo ciclo de aprendizaje (empezar, ordenar, cambios, preocupaciones, instrucciones poco claras); "Mi energía"; "Estrategias"; molestias y ajustes nuevos; Pausa Zen como menú de minijuegos con Pintar por números y Decorar; íconos de pixel art en lugar de emoji y menos texto. App 1.6.0 + API 0.6.0 |
 | 5 | | Redacción con Claude Haiku 5.5 (solicitud y tarjetas), "¿qué puede pedirte tu empresa?" por país y tarjetas de aprendizaje |
 | 6 | | Usuario demo con historial sembrado, revisión de accesibilidad con VoiceOver y texto grande, y enlace público de TestFlight |
 | 7 | | **Validación** con 3–5 personas, idealmente vía Specialisterne y con co-diseño pagado |
 | 8 | | **Pitch:** guion de demo, métricas reales, limitaciones declaradas (tabla del informe) y video de respaldo |
 | ‖ | | **Modelo de audio** (Quique, GPU) sobre niveles por banda → ONNX; se conecta en la iteración 2 |
+
+### Checklist de la iteración 4.2
+
+- [x] Ruta cognitiva con aprendizaje; al servidor solo llegan categorías, nunca texto libre
+- [x] "Mi energía" (solo en el teléfono) y "Estrategias"
+- [x] Aglomeración, humedad y cámara como molestias; ajustes nuevos (cámara, horarios, instrucciones por escrito…)
+- [x] Pausa Zen como menú de minijuegos; Pintar por números; Decorar desde Zen
+- [x] 41 íconos de pixel art propios; sin emoji como ícono; el porqué de cada sugerencia a un toque
+- [ ] Mostrarle la 1.6.0 a Ale y preguntarle por la ruta cognitiva y por el cuarto
+- [ ] Pedirle permiso a Ale para haber adaptado su idea del registro de energía
+- [ ] Corregir el documento del pitch: el objeto se gana por terminar la prueba, no porque haya servido
 
 ### Checklist de la iteración 4.1
 

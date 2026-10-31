@@ -4,7 +4,7 @@ Estas reglas salen de la investigación en [`docs/research/reports`](research/re
 
 ## 1. Principio
 
-La app habla del **entorno**, no de la persona. No diagnostica, no puntúa y no promete productividad. Devuelve control: la persona decide qué probar, qué guardar y qué compartir.
+La app habla del **entorno y de la tarea**, no de la persona. No diagnostica, no puntúa y no promete productividad. En lo cognitivo, las opciones describen lo que pasa con la tarea ("No sé por dónde empezar"), nunca un rasgo de la persona. Devuelve control: la persona decide qué probar, qué guardar y qué compartir.
 
 ## 2. Lenguaje
 
@@ -26,7 +26,8 @@ La app habla del **entorno**, no de la persona. No diagnostica, no puntúa y no 
 - Encabezados **nativos** del Stack (título grande en las pestañas). No se arman a mano.
 - "Cerrar" en texto, siempre arriba a la derecha de los flujos.
 - Listas **agrupadas** con separadores finos, no una tarjeta por fila. Lo elegido se marca con fondo **y** con ícono, nunca solo con color.
-- Íconos SF Symbols. Nada de emoji como ícono.
+- **Primero el dibujo, luego las palabras.** Cada opción de contenido lleva su ícono de pixel art propio (`docs/brand/draw_icons.py`), siempre junto a su texto: el texto sigue ahí para VoiceOver y para quien prefiera leer. Controles del sistema (cerrar, flechas, palomitas): SF Symbols. Nada de emoji como ícono.
+- **Lo que explica va a un toque.** Una pantalla dice qué hacer; el porqué se abre si la persona lo pide (divulgación progresiva). Antes de agregar una frase, se quita otra.
 - Cada pantalla contempla cargando, vacío, error y contenido. Sin spinners de pantalla completa.
 
 ## 4. Color y texto
@@ -178,3 +179,9 @@ Cada lugar guardado tiene un cuarto isométrico en pixel art (arte propio: `docs
 - **Modo concentración:** sin escenas; en cada lugar queda el texto, que dice lo mismo.
 - **"Este lugar cambió"** reinicia las sugerencias de ese lugar sin borrar la historia.
 
+## 13. Minijuegos, energía y estrategias
+
+- **Pausa Zen es un menú de minijuegos:** cada uno con nombre, dibujo y, antes de empezar, instrucciones en tres pasos. Sin puntos, sin tiempo obligatorio donde no hace falta y sin respuestas que guardar. Pintar por números no tiene errores: tocar otra casilla no hace nada. Los números siempre se ven, así que no depende del color.
+- **Mi energía:** tres momentos del día, del 1 al 5, y cada número dice qué hacer. Es un registro de la persona, no una calificación: se queda en el teléfono, no hay rachas ni avisos, y un día sin registro es un día en blanco. La altura de las barras dice el nivel, no solo el color.
+- **Estrategias:** una lista para conocerlas con calma, sin registrar nada y sin IA. Primero el nombre; al tocar, cómo se hace y por qué puede ayudar.
+- **Lo cognitivo aprende igual que el entorno:** se elige qué pasa, se prueba un solo ajuste y se comprueba. La medida es el esfuerzo. Al servidor llegan solo las categorías de la lista; nunca texto libre.
