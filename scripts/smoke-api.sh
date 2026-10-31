@@ -45,7 +45,7 @@ check "listar espacios" 200 "${AUTH[@]}" "$BASE/v1/spaces"
 expect() { [[ "$(json "$1")" == "$2" ]] || { echo "FAIL $3: $(json "$1") ≠ $2"; FAILS=$((FAILS + 1)); }; }
 
 check "catálogo" 200 "$BASE/v1/catalog?locale=es"
-expect "['domains'].__len__()" 4 "dominios del catálogo"
+expect "['domains'].__len__()" 5 "dominios del catálogo"
 
 CHECKIN=$(cat <<JSON
 {"space_id":"$SPACE_ID","task":"reading","feeling":"focus","effort_before":4,"discomfort_before":4,
@@ -172,6 +172,11 @@ check "sin estímulo claro" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins" \
   -d '{"task":"writing","feeling":"other","effort_before":3,"discomfort_before":2,"observations":[{"stimulus":"voices","response":"unsure"}]}'
 expect "['proposal']" None "sin estímulo no hay propuesta"
 check "dejarlo" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins/$(json "['checkin']['id']")/abandon"
+# Lo cognitivo: el mismo ciclo, sin preguntar por el entorno. Solo viajan categorías.
+INNER='{"task":"writing","feeling":"focus","effort_before":4,"discomfort_before":4,"observations":[{"stimulus":"hard_to_start","response":"yes"}],"focus_stimulus":"hard_to_start"}'
+check "registrar algo cognitivo" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins" -d "$INNER"
+expect "['checkin']['focus_stimulus']" hard_to_start "el foco cognitivo se guarda"
+check "dejar lo cognitivo" 200 -X POST "${AUTH[@]}" "$BASE/v1/checkins/$(json "['checkin']['id']")/abandon"
 check "esfuerzo fuera de rango → 400" 400 -X POST "${AUTH[@]}" "$BASE/v1/checkins" \
   -d '{"task":"writing","feeling":"other","effort_before":9,"discomfort_before":3}'
 

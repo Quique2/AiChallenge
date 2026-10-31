@@ -812,6 +812,14 @@ def tray(variant, facing, frame=None):
     return vox(m, facing)
 
 
+def notebook(variant, facing, frame=None):
+    m = Model(8, 8)
+    m.box(1, 1, 0, 6, 6, 1, "book_teal")  # pasta
+    m.box(2, 2, 1, 5, 4, 1, "cream")  # hojas
+    m.box(3, 3, 2, 3, 1, 1, "oak")  # renglones
+    return vox(m, facing)
+
+
 def divider(variant, facing, frame=None):
     fabric = {"sage": "sage", "cream": "cream"}[variant]
     seam = {"sage": "sage_shadow", "cream": "blind_shadow"}[variant]
@@ -1186,17 +1194,18 @@ def beaver(variant, facing, frame=None):
 ADJUSTMENTS = {
     "headphones": ["noise_cancelling", "earplugs", "ask_noise_source"],
     "speaker": ["soft_masking"],
-    "succulent": ["move_from_voices", "book_quiet_room", "move_from_smell", "ask_quiet_desk"],
-    "phone": ["silence_notifications", "batch_messages"],
-    "sign": ["focus_signal", "ask_focus_hours"],
+    "succulent": ["move_from_voices", "book_quiet_room", "move_from_smell", "ask_quiet_desk", "avoid_peak", "ask_flexible_start"],
+    "phone": ["silence_notifications", "batch_messages", "hide_self_view", "ask_camera_off"],
+    "sign": ["focus_signal", "ask_focus_hours", "time_block", "ask_notice_changes"],
     "blinds": ["close_blinds", "rotate_screen", "turn_from_light"],
     "screenDim": ["screen_brightness", "bigger_text", "one_window", "ask_antiglare"],
     "lamp": ["desk_lamp", "ask_lighting"],
-    "tray": ["clear_desk"],
+    "tray": ["clear_desk", "pick_three", "split_checklist", "easiest_first"],
+    "notebook": ["two_minute_start", "write_it_out", "new_first_step", "repeat_back", "check_it_out", "ask_written"],
     "divider": ["face_away", "ask_divider"],
-    "fan": ["cooler_spot", "ask_temperature"],
+    "fan": ["cooler_spot", "ask_temperature", "ventilate"],
     "sweater": ["warm_layer"],
-    "mug": ["short_reset"],
+    "mug": ["short_reset", "transition_pause"],
     "frame": ["ask_remote_focus"],
 }
 
@@ -1226,6 +1235,8 @@ TYPES = {
               facings=FRONT, variants=["warm"]),
     "tray": T("Bandeja ordenada", "Tidy tray", tray, place=["surface"], footprint=[1, 1],
               facings=FRONT, variants=["default"]),
+    "notebook": T("Cuaderno", "Notebook", notebook, place=["surface"], footprint=[1, 1],
+                  facings=FRONT, variants=["default"]),
     "divider": T("Panel divisor", "Divider panel", divider, place=["floor"], footprint=[1, 1],
                  facings=[0, 1], variants=["sage", "cream"]),
     "frame": T("Foto de casa", "Photo of home", frame, place=["wall"], footprint=[1, 1],
@@ -1669,6 +1680,8 @@ def check(out):
     # Ajustes: los mismos que desk.ts, en el mismo orden.
     desk_map = parse_desk_ts()
     ours = {n: s["adjustments"] for n, s in m["types"].items() if s.get("adjustments")}
+    # El cuaderno no tiene dibujo en la escena 2D de respaldo: ahí comparte el de la bandeja.
+    ours["tray"] = ours["tray"] + ours.pop("notebook")
     for item in sorted(set(ours) | set(desk_map)):
         if ours.get(item) != desk_map.get(item):
             problems.append(f"adjustments de {item}: {ours.get(item)} y desk.ts dice {desk_map.get(item)}")
