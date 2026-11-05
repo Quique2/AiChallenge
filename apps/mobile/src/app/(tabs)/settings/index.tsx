@@ -1,3 +1,5 @@
+import { SaveNotice } from '@/components/save-notice';
+import { BeaverMascot } from '@/components/beaver-mascot';
 import { useMutation } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
@@ -132,6 +134,7 @@ export default function SettingsScreen() {
       style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled">
+      <SaveNotice />
       <Group title={t.appearance.title} footer={t.appearance.entryHint}>
         <GroupRow first>
           <Button title={t.appearance.open} variant="secondary" onPress={() => router.push('/appearance')} />
@@ -156,7 +159,8 @@ export default function SettingsScreen() {
         <ThemedText type="footnote" themeColor="textSecondary" accessibilityRole="header" style={styles.label}>
           {t.settings.experience}
         </ThemedText>
-        {preview.scene === 'room' && preview.layout ? (
+        <View style={{ alignSelf: 'center' }}><BeaverMascot pose="coffee" size={96} interactive /></View>
+        {settings.showDesk && preview.scene === 'room' && preview.layout ? (
           // Se vuelve a armar al cambiar el nivel de movimiento: así se ve cómo llega en cada uno.
           <RoomView
             key={level}
@@ -165,7 +169,7 @@ export default function SettingsScreen() {
             intro
             accessibilityLabel={preview.label}
           />
-        ) : preview.scene === 'desk' ? (
+        ) : settings.showDesk && preview.scene === 'desk' ? (
           <DeskScene
             items={desk.items}
             interactive

@@ -20,7 +20,8 @@ La app habla del **entorno y de la tarea**, no de la persona. No diagnostica, no
 
 ## 3. Estructura de pantallas
 
-- **Una pregunta por pantalla** y, como mucho, **5 opciones principales** a la vista; lo demás, a un toque ("Ver más tareas").
+- **Una pregunta por pantalla** y, como mucho, **5 opciones principales** a la vista; lo demás, a un toque ("Ver más tareas"). Excepción desde la 1.7, por validar con personas: la tarea va con "¿Cómo te sientes con esta tarea?", y las dos medidas (molestia y esfuerzo) van juntas al empezar y al terminar, para recorrer menos pantallas.
+- **Hoy** es una sola pregunta ("¿Por dónde empezamos?") con tres caminos: revisar mi entorno, revisar cómo me siento y "Ayúdame a identificarlo". Debajo, lo que se está probando, Pausa y Resumen. Los lugares y sus cuartos están en la pestaña **Espacios**; Mi energía y Estrategias, al final de "Lo que me sirve".
 - Siempre hay **"No sé"** o **"Nada de esto"**. Todo se puede omitir o dejar.
 - Sin tiempos límite. Las respuestas se guardan en el borrador mientras se avanza.
 - Encabezados **nativos** del Stack (título grande en las pestañas). No se arman a mano.
@@ -58,6 +59,7 @@ Hay tres niveles de movimiento (`useMotionLevel` en `src/lib/feedback.ts`). La p
 | Lo que se repite | La franja de la foto da como mucho 3 pasadas (3.6 s) y se queda quieta. La escena, con detalles, se mueve 5 s al aparecer o al tocarla: un solo elemento a la vez (planta, vapor, ventilador), con pausas. Se detiene antes de 5 s (WCAG 2.2.2) y al salir de la pantalla. Nada de oscilaciones continuas (las de ~0.2 Hz marean, según la guía de Apple) |
 | Desplazamiento | Como mucho ≈ 10 pt: 2 pixeles de la escena 2D, 5 de arte en el cuarto. Solo lo que mueve la persona va más lejos, hasta donde lo mandó. Nada cruza la pantalla ni hace zoom de pantalla completa (WCAG 2.3.3) |
 | Momento firma | La onda del monitor pasa de ruidosa a tranquila en 3 cuadros (300 ms). El sonido y la vibración llegan en el cuadro en que queda tranquila, nunca antes |
+| El castor | Opcional, en pixel art. Solo con detalles: saluda una vez en la bienvenida y toma un sorbo si se toca (6 cuadros de 180 ms, ≈ 1 s), sin repetirse solo. Se detiene al salir de la pantalla o de la app. Tocarlo no registra ni premia nada |
 | Vibración | **Apagada por defecto.** Si se activa, solo al confirmar, una vez por acción y nunca como única señal |
 | Sonido | **Apagado por defecto.** Ver la sección 11 |
 
@@ -73,6 +75,7 @@ Hay tres niveles de movimiento (`useMotionLevel` en `src/lib/feedback.ts`). La p
 ## 7. Medición
 
 - **Medida principal:** "¿Cuánto te molesta el entorno?". **Secundaria:** "¿Cuánto esfuerzo te cuesta la tarea?". Ambas con 5 botones y palabra en cada punto (casi nada, poco, algo, bastante, muchísimo); sin deslizador. Son medidas propias, no clínicas.
+- **"¿Qué tanto te sirvió?"** al terminar: cinco niveles (nada, poco, algo, bastante, mucho) y "Todavía no lo sé". A la API solo llega sí, no o no sé ("nada" es no; cualquier otro nivel, sí). El nivel se queda en el teléfono y se ve en "Lo que me sirve" como la valoración propia más reciente.
 - "Ayudó" = mejoró **más que la mejora típica de esa persona**, no solo "bajó un punto". Así se descuenta la regresión a la media.
 - De vez en cuando (10 %, tras 3 registros) se propone **"Esta vez no cambies nada"**, de forma transparente y con la opción de no hacerlo. Es la comparación que separa un ajuste del paso del tiempo.
 
@@ -121,7 +124,7 @@ Fondo crema con tipografía serif de exhibición y acento terracota; una tarjeta
 
 - **Se premia la prueba, no el resultado.** El objeto llega haya ayudado o no, y el final suena y se ve igual para "ayudó", "no ayudó" y "no está claro": "Ya sabes algo más de este espacio". Antes de contestar nunca se promete nada por una respuesta. Si solo "ayudó" ganara algo, la app empujaría a contestarlo, y ese es justo el dato que aprende el motor y que va en la solicitud a la empresa (premiar respuestas empeora su calidad: Dejonckheere et al., 2024; regla 1 de las notas de retención).
 - **Nunca se pierde.** No caduca, no hay rachas, no hay huecos vacíos ni "te faltan N" o "3 de 14".
-- Hoy dice "N pruebas terminadas": un número que solo sube.
+- El número de pruebas terminadas solo sube. Desde la 1.7, Hoy no muestra escenas: el cuarto de cada lugar está en Espacios, y "Tu escritorio" aparece en el resultado y en la semana cuando no hay lugar.
 - Se celebra **una vez por prueba**, en el resultado y dentro de la escena: la onda se calma, el objeto nuevo aparece y suena el tono del resultado. Lo demás es silencioso.
 - El cielo de la ventana sigue la hora del teléfono (amanecer, día, atardecer y noche). No es una notificación ni pide nada.
 - La onda del monitor pasa de ruidosa a tranquila al terminar un registro: es la metáfora de la app (el entorno que se calma).
@@ -176,7 +179,7 @@ Cada lugar guardado tiene un cuarto isométrico en pixel art (arte propio: `docs
 
   Al arrastrar, el objeto salta de casilla en casilla, sin inercia, con su sombra y la casilla destino; si no se puede soltar ahí, la casilla bloqueada se ve encima de lo que estorba, con otra forma y no solo otro color, y el motivo se dice en texto. El tono del resultado suena cuando el objeto toca el piso, nunca antes.
 - **Nada se pierde ni se deteriora:** no hay plantas que se secan ni mascotas que piden atención. El castor solo está ahí.
-- **Modo concentración:** sin escenas; en cada lugar queda el texto, que dice lo mismo.
+- **Modo concentración** (o "Mostrar escenas decorativas" apagado): sin escenas en ninguna pantalla; queda el texto, que dice lo mismo, con el aviso del objeto nuevo y el tono del resultado.
 - **"Este lugar cambió"** reinicia las sugerencias de ese lugar sin borrar la historia.
 
 ## 13. Minijuegos, energía y estrategias
