@@ -207,12 +207,21 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 | 3 | ✅ 26 oct | **Experiencia y retención sin presión:** arreglos del permiso del micrófono y de los botones fuera de la pantalla; "Tu escritorio" (un objeto por cada prueba terminada, haya ayudado o no, que nunca se pierde); tres niveles de movimiento; sonidos suaves opcionales; resumen semanal opcional; plan "si…, entonces…". App 1.3.0 + API 0.4.0 |
 | 4 | ✅ 29 oct | **Cuarto isométrico y memoria por lugar** (sección 10): memoria por lugar en el motor, "Lo que sé de este lugar", "Usarlo otra vez", cuarto decorable por lugar con editor accesible y el castor en pixel art. App 1.4.0 + API 0.5.0 |
 | 4.1 | ✅ 30 oct | **Animaciones del cuarto:** entrada, llegada de lo ganado, mover, girar, guardar y reposo por nivel de movimiento; arrastre opcional en el editor; el cuarto en Hoy, resultado, Listo, semana y Ajustes; integración de `expo-speech` y los cambios de Magda en una build. App 1.5.0 + API 0.5.1 |
-| 4.2 | | **Lo que pidió la socioformadora y más arte:** ruta cognitiva con el mismo ciclo de aprendizaje (empezar, ordenar, cambios, preocupaciones, instrucciones poco claras); "Mi energía"; "Estrategias"; molestias y ajustes nuevos; Pausa Zen como menú de minijuegos con Pintar por números y Decorar; íconos de pixel art en lugar de emoji y menos texto. App 1.6.0 + API 0.6.0 |
+| 4.2 | ✅ 31 oct | **Lo que pidió la socioformadora y más arte:** ruta cognitiva con el mismo ciclo de aprendizaje (empezar, ordenar, cambios, preocupaciones, instrucciones poco claras); "Mi energía"; "Estrategias"; molestias y ajustes nuevos; Pausa Zen como menú de minijuegos con Pintar por números y Decorar; íconos de pixel art en lugar de emoji y menos texto. App 1.6.0 + API 0.6.0 |
+| 4.3 | | **Cambios de Magda (UX), integrados:** Hoy con una pregunta y tres caminos; pestaña Espacios; menos pantallas al registrar y al terminar; "¿Qué tanto te sirvió?" con el nivel solo en el teléfono; Mi energía con corazones y "No estoy seguro"; el castor en pixel art con una animación de un toque; las escenas decorativas se ocultan en toda la app. En la revisión: lo ganado vuelve a llegar al cuarto si la app se abre desde el aviso, el tono y el aviso del objeto nuevo siguen con las escenas ocultas, y Hoy recupera sus dos avisos de una sola vez. App 1.7.0 |
 | 5 | | Redacción con Claude Haiku 5.5 (solicitud y tarjetas), "¿qué puede pedirte tu empresa?" por país y tarjetas de aprendizaje |
 | 6 | | Usuario demo con historial sembrado, revisión de accesibilidad con VoiceOver y texto grande, y enlace público de TestFlight |
 | 7 | | **Validación** con 3–5 personas, idealmente vía Specialisterne y con co-diseño pagado |
 | 8 | | **Pitch:** guion de demo, métricas reales, limitaciones declaradas (tabla del informe) y video de respaldo |
 | ‖ | | **Modelo de audio** (Quique, GPU) sobre niveles por banda → ONNX; se conecta en la iteración 2 |
+
+### Checklist de la iteración 4.3
+
+- [x] Traer los commits de Magda de AiChallengeFront y AiChallengeBack con su autoría (rama `equipo/magda-20261104`)
+- [x] Revisión: progreso al guardar, escenas ocultas, avisos de Hoy, encabezados de las pestañas y los README (conflicto sin resolver y rutas que sí existen)
+- [ ] Probar la 1.7.0 en un iPhone: registro completo, "¿Qué tanto te sirvió?", Espacios y el castor
+- [ ] Decidir con el equipo: dos preguntas por pantalla (DESIGN §3); el cuarto y los accesos con dibujo fuera de Hoy, frente al pedido de "más arte"; "4/5" en Lo que me sirve
+- [ ] Borrar la rama `magda` del monorepo: apunta al 27 oct y un sync hecho desde ahí borró fuentes e íconos en el espejo (Magda lo deshizo al mezclar)
 
 ### Checklist de la iteración 4.2
 
