@@ -221,7 +221,7 @@ Cada iteración termina con: deploy en Railway + build o update en TestFlight + 
 - [x] Revisión: progreso al guardar, escenas ocultas, avisos de Hoy, encabezados de las pestañas y los README (conflicto sin resolver y rutas que sí existen)
 - [ ] Probar la 1.7.0 en un iPhone: registro completo, "¿Qué tanto te sirvió?", Espacios y el castor
 - [ ] Decidir con el equipo: dos preguntas por pantalla (DESIGN §3); el cuarto y los accesos con dibujo fuera de Hoy, frente al pedido de "más arte"; "4/5" en Lo que me sirve
-- [ ] Borrar la rama `magda` del monorepo: apunta al 27 oct y un sync hecho desde ahí borró fuentes e íconos en el espejo (Magda lo deshizo al mezclar)
+- [x] Borrada la rama `magda` del monorepo (4 nov): apuntaba al 27 oct y un sync hecho desde ahí borró fuentes e íconos en el espejo (Magda lo deshizo al mezclar). Los syncs salen solo de `main`
 
 ### Checklist de la iteración 4.2
 
