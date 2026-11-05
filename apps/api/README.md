@@ -1,19 +1,7 @@
-<<<<<<< Updated upstream
-# SpaceEase — API (Rust)
-=======
 # Space Ease — Backend / API
->>>>>>> Stashed changes
 
 Space Ease acompaña principalmente a personas neurodivergentes para reconocer molestias del entorno y necesidades internas, probar ajustes y registrar si ayudan. Este repositorio contiene la API que guarda cuentas de dispositivo, lugares, check-ins y resultados, y propone ajustes a partir de un catálogo. La interfaz móvil y las actividades locales viven en el frontend. El producto no realiza diagnósticos.
 
-<<<<<<< Updated upstream
-> **Para el equipo:** aquí se puede trabajar. Este repo es el espejo de `apps/api` del monorepo de trabajo.
-> - Antes de empezar, `git pull`: los commits `sync monorepo@…` traen lo que cambió en el monorepo.
-> - Haz commits normales en `main` (o una rama con PR), nunca force-push.
-> - Quique los trae al monorepo uno por uno con `scripts/import-team-repos.sh`, con tu nombre como autor. Ahí se revisan (tipos, lint y pruebas) y luego llegan a la app.
-> - El siguiente sync no sobrescribe tu trabajo: se detiene si encuentra commits tuyos que todavía no se importaron.
-> - Al mezclarse a `main` del monorepo, Railway despliega la API: revisa que `scripts/smoke-api.sh` pase.
-=======
 ## Repositorios e integración
 
 Trabajamos en dos repositorios: `AiChallengeFront` para la aplicación móvil y `AiChallengeBack` para el servidor. Integramos ambos en el [monorepo AiChallenge](https://github.com/Quique2/AiChallenge.git) para coordinar el producto y preparar la versión de iOS distribuida por TestFlight:
@@ -113,6 +101,9 @@ Sin `ANTHROPIC_API_KEY`, el servidor puede iniciar y las demás funciones siguen
 | `GET/PATCH/DELETE /v1/me` | Consultar, actualizar o borrar la cuenta |
 | `GET/POST /v1/spaces` | Consultar o crear lugares |
 | `DELETE /v1/spaces/{id}` | Borrar un lugar |
+| `GET /v1/spaces/{id}/memory` | Lo que se sabe de un lugar: lo que se probó ahí y lo que no se puede hacer ahí |
+| `POST /v1/spaces/{id}/reset` | «Este lugar cambió»: el motor solo cuenta lo que se pruebe desde ahora; no borra nada |
+| `GET/PUT /v1/spaces/{id}/room` | Cuarto isométrico del lugar, con revisión para que dos pantallas no se pisen |
 | `GET /v1/catalog` | Catálogo de ajustes |
 | `GET/POST /v1/checkins` | Consultar o crear check-ins |
 | `GET /v1/checkins/{id}` | Consultar un check-in |
@@ -122,7 +113,7 @@ Sin `ANTHROPIC_API_KEY`, el servidor puede iniciar y las demás funciones siguen
 
 Las rutas privadas requieren `Authorization: Bearer <llave-del-dispositivo>`. Los esquemas y validaciones están en los módulos de `src/routes/`.
 
-**Límite de este snapshot:** el router actual no expone las rutas de memoria, reinicio y cuarto de un lugar que declara el cliente móvil (`/v1/spaces/:id/memory`, `/reset`, `/room`). Coordinar una versión compatible desde el monorepo antes de demostrar esas funciones. Las pausas guiadas y la personalización de la interfaz se gestionan en el front.
+Las pausas guiadas y la personalización de la interfaz se gestionan en el front.
 
 ## Pruebas y compilación
 
@@ -160,4 +151,3 @@ El servidor limita el tamaño de las solicitudes y autentica las rutas privadas.
 ## Nombres internos
 
 Algunos identificadores conservan nombres anteriores, como `spaceease-api`, `spaceease_api` y `sensa-postgres`. Se documentan tal como aparecen en los comandos y el código para que la instalación sea reproducible; el nombre del producto es **Space Ease**.
->>>>>>> Stashed changes
